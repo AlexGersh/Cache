@@ -30,8 +30,6 @@ class Cache_Line {
 
     // ----functions
 
-<<<<<<< HEAD
-=======
     // read from cache line.
     //
     // return false if miss - else, return true
@@ -50,18 +48,12 @@ class Cache_Line {
     //  ways[0]=true;
     // w 0x000 00003
     //  ways[0] true
->>>>>>> refs/remotes/origin/main
 };
 
 /*************************** IMPLEMENTATIONS *****************************/
 Cache_Line::Cache_Line(int tag_size) {}
-<<<<<<< HEAD
-bool Cache_Line::read_from_cline(int address) {return false;}
-void Cache_Line::write_to_cline(int address,int* out,int* status) {}
-=======
 bool Cache_Line::read_from_cline(int address) {}
 void Cache_Line::write_to_cline(int address, int *out, int *status) {}
->>>>>>> refs/remotes/origin/main
 
 class Cache_Engine {
   private:
@@ -92,7 +84,6 @@ class Cache_Engine {
     Sim_Info info;
 
   public:
-    Cache_Engine();
     // Constrcutors
     Cache_Engine();
     Cache_Engine(int mem_cyc, int block_size, int l1_size, int l2_size,
@@ -103,13 +94,9 @@ class Cache_Engine {
     void read_to_mem(int address);
     void print_DEBUG();
 };
-<<<<<<< HEAD
-Cache_Engine::Cache_Engine(){}
-=======
 
 /*************************** IMPLEMENTATIONS *****************************/
-
->>>>>>> refs/remotes/origin/main
+Cache_Engine::Cache_Engine() {}
 Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
                            int l2_size, int l1_cyc, int l2_cyc, int l1_assoc,
                            int l2_assoc, bool is_write_alloc) {}
