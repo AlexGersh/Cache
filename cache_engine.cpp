@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+
 struct Sim_Info {
 
     // L1_cache
@@ -18,7 +19,8 @@ struct Sim_Info {
     int mem_num_acc;
 };
 
-enum STATUS { HIT_NO_REPLACE, HIT_REPLACE_NO_DIRTY, HIT_REPLACE_DIRTY, MISS}; 
+enum STATUS { HIT_NO_REPLACE, HIT_REPLACE_NO_DIRTY, HIT_REPLACE_DIRTY, MISS };
+
 /************************ Cache_Line DECLARATIONS **************************/
 class Cache_Line {
 
@@ -27,7 +29,7 @@ class Cache_Line {
     int num_of_ways;
     int *LRU_ways;
     bool *dirty_ways;
-    
+
     bool is_write_alloc;
     void update_LRU();
 
@@ -41,7 +43,7 @@ class Cache_Line {
     // read from cache line.
     //
     // return false if miss - else, return true
-    bool read_from_cline(int tag,int offset);
+    bool read_from_cline(int tag, int offset);
 
     // write to cache line. will replace blocks if full.
     // int* out - pointer to replaced(if any) address block.
@@ -49,7 +51,7 @@ class Cache_Line {
     // line. else, in MISS will add block to the cache line. status 0 - HIT and
     // no repalce status 1 - HIT and replace no dirty bit status 2 - HIT and
     // replace with dirty bit status 3 - MISS
-    void write_to_cline(int tag,int offset, int *out, int *status);
+    void write_to_cline(int tag, int offset, int *out, int *status);
     void get_LRU();
 
     // print the cache line. only for debugging.
@@ -61,46 +63,39 @@ class Cache_Line {
 };
 
 /************************ Cache Line IMPLEMENTATIONS **************************/
-Cache_Line::Cache_Line(){}
-Cache_Line::Cache_Line(int num_of_ways,bool is_write_alloc) 
-{
-  this->ways = new bool[num_of_ways];
-  this->tags = new int[num_of_ways];
-  this->num_of_ways = num_of_ways;
-  this->LRU_ways = new int[num_of_ways];
-  this->dirty_ways = new bool[num_of_ways];
-  this->is_write_alloc = is_write_alloc;
+Cache_Line::Cache_Line() {}
+Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
+    this->ways = new bool[num_of_ways];
+    this->tags = new int[num_of_ways];
+    this->num_of_ways = num_of_ways;
+    this->LRU_ways = new int[num_of_ways];
+    this->dirty_ways = new bool[num_of_ways];
+    this->is_write_alloc = is_write_alloc;
 }
-bool Cache_Line::read_from_cline(int tag,int offset) {}
+bool Cache_Line::read_from_cline(int tag, int offset) {}
 
-void Cache_Line::write_to_cline(int tag,int offset, int *out, int *status) 
-{
+void Cache_Line::write_to_cline(int tag, int offset, int *out, int *status) {
 
-  // searching for HIT
-  for(int i=0;i<this->num_of_ways;i++)
-  {
-    if(tag==this->tags[i])
-    {
-      //we got a HIT
-      *status = HIT_NO_REPLACE;
-      this->dirty_ways[i] = true;
-      return;
+    // searching for HIT
+    for (int i = 0; i < this->num_of_ways; i++) {
+        if (tag == this->tags[i]) {
+            // we got a HIT
+            *status = HIT_NO_REPLACE;
+            this->dirty_ways[i] = true;
+            return;
+        }
     }
-  }
 
-  //if MISS
-  if(this->is_write_alloc)
-  {
-    //write allocate police
-    //finding somewhere to place
-    for(int i=0;i<this->num_of_ways;i++)
-    {
-      if(!this->ways[i])
-      {
-        //found empty block
-      }
+    // if MISS
+    if (this->is_write_alloc) {
+        // write allocate police
+        // finding somewhere to place
+        for (int i = 0; i < this->num_of_ways; i++) {
+            if (!this->ways[i]) {
+                // found empty block
+            }
+        }
     }
-  }
 }
 
 void Cache_Line::print_DEBUG() {
@@ -162,6 +157,9 @@ class Cache_Engine {
     void read_from_mem(int address);
     void print_DEBUG();
     int evaluate_tag_size(int offset_size_bits, int set_size_bits);
+
+    // destructors
+    ~Cache_Engine();
 };
 
 /*********************** Cache_Engine IMPLEMENTATIONS *************************/
@@ -215,6 +213,10 @@ Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
 }
 
 // destructors
+Cache_Engine::~Cache_Engine() {
+    delete[] L1_cache; // array delete
+    delete[] L2_cache; // array delete
+}
 
 // functions
 void Cache_Engine::write_to_mem(int address) {
@@ -252,7 +254,7 @@ int Cache_Engine::evaluate_tag_size(int offset_size_bits, int set_size_bits) {
 Cache_Engine myCache;
 
 // FOR DEBUGGING ONLY
-int main() {
-    Cache_Line l1 = Cache_Line(3, false);
-    l1.print_DEBUG();
-}
+// int main() {
+//     Cache_Line l1 = Cache_Line(3, false);
+//     l1.print_DEBUG();
+// }
