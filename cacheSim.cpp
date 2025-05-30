@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cache_engine>
 
 using std::FILE;
 using std::string;
@@ -59,9 +60,8 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 	}
-
+  // here we should init cache
 	while (getline(file, line)) {
-
 		stringstream ss(line);
 		string address;
 		char operation = 0; // read (R) or write (W)
@@ -84,12 +84,16 @@ int main(int argc, char **argv) {
 
 		// DEBUG - remove this line
 		cout << " (dec) " << num << endl;
+    
 
+    //HERE we should simulate access to memory
 	}
 
 	double L1MissRate;
 	double L2MissRate;
 	double avgAccTime;
+
+  //HERE final inputL
 
 	printf("L1miss=%.03f ", L1MissRate);
 	printf("L2miss=%.03f ", L2MissRate);
