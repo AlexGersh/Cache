@@ -60,14 +60,14 @@ class Cache_Line {
     //  ways[0] true
 };
 
-/*************************** Cache Line IMPLEMENTATIONS *****************************/
+/************************ Cache Line IMPLEMENTATIONS **************************/
 Cache_Line::Cache_Line(){}
 Cache_Line::Cache_Line(int num_of_ways,bool is_write_alloc) 
 {
-  this->ways = new bool[tag_size];
-  this->tags = new int[tag_size];
+  this->ways = new bool[num_of_ways];
+  this->tags = new int[num_of_ways];
   this->num_of_ways = num_of_ways;
-  this->LRU_ways = new int[tag_size];
+  this->LRU_ways = new int[num_of_ways];
   this->dirty_ways = new bool[num_of_ways];
   this->is_write_alloc = is_write_alloc;
 }
