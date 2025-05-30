@@ -1,55 +1,67 @@
+#pragma once
 struct Sim_Info {
-    
-  //L1_cache 
-  int l1_num_miss;
-  int l1_num_acc;
 
-  //L2_cache
-  int l2_num_miss;
-  int l2_num_acc;
-  
-  //mem
-  int mem_num_acc;
-  
+    // L1_cache
+    int l1_num_miss;
+    int l1_num_acc;
+
+    // L2_cache
+    int l2_num_miss;
+    int l2_num_acc;
+
+    // mem
+    int mem_num_acc;
 };
-
 
 class Cache_Line {
 
     bool *ways;
     int *tags;
     int tag_size;
-    int* LRU_ways;
-    int* dirty_ways;
-    
+    int *LRU_ways;
+    int *dirty_ways;
+
     bool is_write_alloc;
     void update_LRU();
-    void get_LRU();
+
   public:
     // Constructors
     Cache_Line(int tag_size);
 
     // ----functions
-    
-    // read from cache line.
-    // 
-    // return false if miss - else, return true 
-    bool read_from_cline(int address);
-    
-    // write to cache line. will replace blocks if full. 
-    // int* out - pointer to replaced(if any) address block.
-    // if no write allocate police in MISS will not add the block to the cache line. else, in MISS will add block to the cache line.
-    // status 0 - HIT and no repalce
-    // status 1 - HIT and replace no dirty bit 
-    // status 2 - HIT and replace with dirty bit 
-    // status 3 - MISS  
-    void write_to_cline(int address,int* out,int* status);
 
+<<<<<<< HEAD
+=======
+    // read from cache line.
+    //
+    // return false if miss - else, return true
+    bool read_from_cline(int address);
+
+    // write to cache line. will replace blocks if full.
+    // int* out - pointer to replaced(if any) address block.
+    // if no write allocate police in MISS will not add the block to the cache
+    // line. else, in MISS will add block to the cache line. status 0 - HIT and
+    // no repalce status 1 - HIT and replace no dirty bit status 2 - HIT and
+    // replace with dirty bit status 3 - MISS
+    void write_to_cline(int address, int *out, int *status);
+    void get_LRU();
+
+    // r 0x000 00001
+    //  ways[0]=true;
+    // w 0x000 00003
+    //  ways[0] true
+>>>>>>> refs/remotes/origin/main
 };
 
+/*************************** IMPLEMENTATIONS *****************************/
 Cache_Line::Cache_Line(int tag_size) {}
+<<<<<<< HEAD
 bool Cache_Line::read_from_cline(int address) {return false;}
 void Cache_Line::write_to_cline(int address,int* out,int* status) {}
+=======
+bool Cache_Line::read_from_cline(int address) {}
+void Cache_Line::write_to_cline(int address, int *out, int *status) {}
+>>>>>>> refs/remotes/origin/main
 
 class Cache_Engine {
   private:
@@ -80,6 +92,7 @@ class Cache_Engine {
     Sim_Info info;
 
   public:
+    Cache_Engine();
     // Constrcutors
     Cache_Engine();
     Cache_Engine(int mem_cyc, int block_size, int l1_size, int l2_size,
@@ -90,36 +103,38 @@ class Cache_Engine {
     void read_to_mem(int address);
     void print_DEBUG();
 };
+<<<<<<< HEAD
 Cache_Engine::Cache_Engine(){}
+=======
+
+/*************************** IMPLEMENTATIONS *****************************/
+
+>>>>>>> refs/remotes/origin/main
 Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
                            int l2_size, int l1_cyc, int l2_cyc, int l1_assoc,
-                           int l2_assoc, bool is_write_alloc) {
+                           int l2_assoc, bool is_write_alloc) {}
 
-    
-}
+void Cache_Engine::write_to_mem(int address) {
+    /*
+    int out1;
+    int out2;
+    int status;
+    set_L1 = getSet(address);
+    cline_L1 = this.L1_cache[set];
 
-void Cache_Engine::write_to_mem(int address) 
-{
-  /*
-  int out1;
-  int out2;
-  int status;
-  set_L1 = getSet(address);
-  cline_L1 = this.L1_cache[set];
-  
-  cline_L1.write_to_cline(address,out,status);
+    cline_L1.write_to_cline(address,out,status);
 
-  if(staus == 0)
-    siyamnu
-  if(status == 1)
-    siyamnu;
-  if(status == 2)
-    cline_L2.write_to_cline(out1,out2,status);  //only modifing LRU
-    siyamnu;    
-  if(status == 3)
-    cline_L2.write_to_cline(address,out2,status);
-    siyamnu;
-  */
+    if(staus == 0)
+      siyamnu
+    if(status == 1)
+      siyamnu;
+    if(status == 2)
+      cline_L2.write_to_cline(out1,out2,status);  //only modifing LRU
+      siyamnu;
+    if(status == 3)
+      cline_L2.write_to_cline(address,out2,status);
+      siyamnu;
+    */
 }
 void Cache_Engine::read_to_mem(int address) {}
 void Cache_Engine::print_DEBUG() {}

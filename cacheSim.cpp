@@ -1,3 +1,4 @@
+#include "cache_engine.cpp"
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -12,12 +13,10 @@ using std::ifstream;
 using std::string;
 using std::stringstream;
 
-// Forward Declarations
-class Cache_Engine;
-class Cache_Line;
-
-// Globals
+/*************************** GLOBALS *****************************/
 extern Cache_Engine myCache;
+
+/*************************** MAIN *****************************/
 
 int main(int argc, char **argv) {
 
@@ -67,8 +66,13 @@ int main(int argc, char **argv) {
             return 0;
         }
     }
+<<<<<<< HEAD
     // here we should init cache
 
+=======
+    myCache = Cache_Engine(MemCyc, BSize, L1Size, L2Size, L1Assoc, L2Assoc,
+                           L1Cyc, L2Cyc, WrAlloc);
+>>>>>>> refs/remotes/origin/main
     while (getline(file, line)) {
         stringstream ss(line);
         string address;
