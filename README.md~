@@ -1,3 +1,39 @@
 # Cache
 
-testing commit
+1. Cache characteristics:
+    Static 
+        - 2 levels: L1 and L2
+        - Both levels work with Write Back Policy on cache hits
+        - Inclusive principle (L2 has all the data L1 has)
+        - Replacement policy - LRU (last recently used)
+        - On init - cache is empty
+        - Address Size - 4 Bytes (32 bits)
+        - Every address is aligned (divisible by 4)
+        
+    Controlled by user:
+        - On cache misses: can work by Write Allocate or No Write Allocate 
+        - Memory size       (X [Bytes])
+        - Block size        (Y [Bytes])
+        - Associativity     (k-way)
+        - Access time       (Z [seconds])
+    
+2.  Access time to cache has to include acces_time to every level
+    i.e: when Miss on L1, Hit on L2:            t_acc = t_L1 + t_L2
+        when Miss on L1 and L2, Hit on DRAM:   t_acc = t_L1 + t_L2 + t_Mem
+
+3.  Input:
+    ./cacheSim <input file> 
+        --mem-cyc <# of cycles> 
+        --bsize <block log2(size)>  
+        --wr-alloc <0: No Write Allocate; 1: Write Allocate> 
+        --l1-size <log2(size)>
+        --l1-assoc <log2(# of ways)> 
+        --l1-cyc <# of cycles>  
+        --l2-size <log2(size)> 
+        --l2-assoc <log2(# of ways)> 
+        --l2-cyc <# of cycles>
+
+4.  Output:
+    L1miss=<L1 miss rate>       [0,1] range, 3 digits accuracy
+    L2miss=<L2 miss rate>       [0,1] range, 3 digits accuracy
+    AccTimeAvg=<avg.acc.time>   [seconds]  , 3 digits accuracy
