@@ -1,4 +1,5 @@
 #include "cache_engine.cpp"
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
