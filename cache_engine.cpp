@@ -1,4 +1,9 @@
 #pragma once
+#include <cmath>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 struct Sim_Info {
 
     // L1_cache
@@ -13,6 +18,7 @@ struct Sim_Info {
     int mem_num_acc;
 };
 
+/************************ Cache_Line DECLARATIONS **************************/
 class Cache_Line {
 
     bool *ways;
@@ -50,17 +56,19 @@ class Cache_Line {
     //  ways[0] true
 };
 
-/*************************** IMPLEMENTATIONS *****************************/
+/************************ Cache_Line IMPLEMENTATIONS **************************/
 Cache_Line::Cache_Line(int tag_size) {}
 bool Cache_Line::read_from_cline(int address) {}
 void Cache_Line::write_to_cline(int address, int *out, int *status) {}
 
+/************************ Cache_Engine DECLARATIONS **************************/
 class Cache_Engine {
   private:
     // general config
     int cyc_acc_mem;     // how much cycles takes to acces DRAM
     int block_size_bits; // [bits] | represents log_2(actual_block_size)
-    int block_size;      // [bytes] | we will evaluate by pow(2,block_size_bits)
+                         // also represents the offset_size_bits
+    int block_size;      // [bytes] | evaluated by pow(2,block_size_bits)
     bool is_write_alloc;
 
     // L1 config
@@ -69,6 +77,8 @@ class Cache_Engine {
     int l1_num_of_sets;   // [#sets] | evaluate by: #block / #ways_of_L2
     int l1_set_size_bits; // [bits] | evaluate by: log_2(l1_num_of_sets)
     int cyc_acc_L1;       // how much cycles takes to acces L1
+    int l1_tag_size_bits; // [bits] | how much tag bits we have
+                          // evaluated by function
 
     // L2 config
     int l2_size_bits;     // [bits] | represents log_2(actual_L2_size_in_bytes)
@@ -76,6 +86,8 @@ class Cache_Engine {
     int l2_num_of_sets;   // [#sets] | evaluate by: #block / #ways_of_L2
     int l2_set_size_bits; // [bits] | evaluate by: log_2(l1_num_of_sets)
     int cyc_acc_L2;       // how much cycles takes to acces L2
+    int l2_tag_size_bits; // [bits] | how much tag bits we have
+                          // evaluated by function
 
     Cache_Line *L1_cache;
     Cache_Line *L2_cache;
@@ -95,12 +107,42 @@ class Cache_Engine {
     void print_DEBUG();
 };
 
-/*************************** IMPLEMENTATIONS *****************************/
+/*********************** Cache_Engine IMPLEMENTATIONS *************************/
+// constructors
 Cache_Engine::Cache_Engine() {}
 Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
                            int l2_size, int l1_cyc, int l2_cyc, int l1_assoc,
-                           int l2_assoc, bool is_write_alloc) {}
+                           int l2_assoc, bool is_write_alloc) {
+    // general
+    this->cyc_acc_mem = mem_cyc;
+    this->block_size_bits = block_size;
+    this->block_size = std::pow(2, this->block_size_bits); // size in bytes
+    this->is_write_alloc = is_write_alloc;
 
+    // L1
+    this->l1_size_bits = l1_size;
+    this->l1_assoc = l1_assoc;
+    this->l1_num_of_sets = pow(2, this->l1_size_bits) / this->l1_assoc;
+    this->l1_set_size_bits = std::log2(l1_num_of_sets);
+    this->cyc_acc_L1 = l1_cyc;
+    this->l1_tag_size_bits; /// to finish
+
+    // L2
+    this->l2_size_bits = l2_size;
+    this->l2_assoc = l2_assoc;
+    this->l2_num_of_sets = pow(2, this->l2_size_bits) / this->l2_assoc;
+    this->l2_set_size_bits = std::log2(l2_num_of_sets);
+    this->cyc_acc_L2 = l2_cyc;
+    this->l2_tag_size_bits; /// to finish
+
+    // L1_cache array
+    L1_cache = new Cache_Line[l1_num_of_sets];
+    L2_cache = new Cache_Line[l2_num_of_sets];
+}
+
+// destructors
+
+// functions
 void Cache_Engine::write_to_mem(int address) {
     /*
     int out1;
