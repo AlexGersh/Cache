@@ -1,8 +1,20 @@
 
+CXX = g++
 
-cacheSim: cacheSim.cpp cache_engine.cpp
-	g++ -o cache_engine cache_engine.cpp cache_engine.cpp
+CXXFLAGS= -std=c++17 -g
+
+TARGET = cacheSim
+
+SRCS = cacheSim.cpp cache_engine.cpp
+OBJS = $(SRCS:.cpp=.o)
+
+$(TARGET):$(OBJS) 
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
+
+%.o : %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 .PHONY: clean
 clean:
 	rm -f *.o
-	rm -f cacheSim
+	rm -f $(TARGET) 
