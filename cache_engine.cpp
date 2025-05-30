@@ -27,15 +27,15 @@ class Cache_Line {
     int num_of_ways;
     int *LRU_ways;
     int *dirty_ways;
-    
+
     bool is_write_alloc;
     void update_LRU();
 
   public:
     // Constructors
     Cache_Line();
-    Cache_Line(int num_of_ways,bool is_write_alloc);
-    
+    Cache_Line(int num_of_ways, bool is_write_alloc);
+
     // ----functions
 
     // read from cache line.
@@ -51,8 +51,8 @@ class Cache_Line {
     // replace with dirty bit status 3 - MISS
     void write_to_cline(int address, int *out, int *status);
     void get_LRU();
-    
-    //print the cache line. only for debugging.
+
+    // print the cache line. only for debugging.
     void print_DEBUG();
     // r 0x000 00001
     //  ways[0]=true;
@@ -60,36 +60,32 @@ class Cache_Line {
     //  ways[0] true
 };
 
-/*************************** Cache Line IMPLEMENTATIONS *****************************/
-Cache_Line::Cache_Line(){}
-Cache_Line::Cache_Line(int num_of_ways,bool is_write_alloc) 
-{
-  this->ways = new bool[tag_size];
-  this->tags = new int[tag_size];
-  this->num_of_ways = num_of_ways;
-  this->LRU_ways = new int[tag_size];
-  this->dirty_ways = new int[num_of_ways];
-  this->is_write_alloc = is_write_alloc;
+/************************ Cache Line IMPLEMENTATIONS **************************/
+Cache_Line::Cache_Line() {}
+Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
+    this->ways = new bool[tag_size];
+    this->tags = new int[tag_size];
+    this->num_of_ways = num_of_ways;
+    this->LRU_ways = new int[tag_size];
+    this->dirty_ways = new int[num_of_ways];
+    this->is_write_alloc = is_write_alloc;
 }
 bool Cache_Line::read_from_cline(int address) {}
 
 void Cache_Line::write_to_cline(int address, int *out, int *status) {}
 
-void Cache_Line::print_DEBUG()
-{
-  std::cout<<"Cache status: write_alloc_police = " << this->is_write_alloc;
-  for(int i=0;i<this->num_of_ways;i++)
-  {  
-    std::cout<< " WAY"<<i<<" [";
-    std::cout<<" TAG = " << this->tags[i] <<
-                " Is taken = " << this->ways[i] <<
-                " LRU = " <<this->LRU_ways[i] <<
-                " DirtyBit = " <<this->dirty_ways[i]<<"]";
-  }
+void Cache_Line::print_DEBUG() {
+    std::cout << "Cache status: write_alloc_police = " << this->is_write_alloc;
+    for (int i = 0; i < this->num_of_ways; i++) {
+        std::cout << " WAY" << i << " [";
+        std::cout << " TAG = " << this->tags[i]
+                  << " Is taken = " << this->ways[i]
+                  << " LRU = " << this->LRU_ways[i]
+                  << " DirtyBit = " << this->dirty_ways[i] << "]";
+    }
 
-  std::cout<<std::endl;
+    std::cout << std::endl;
 }
-
 
 /************************ Cache_Engine DECLARATIONS **************************/
 class Cache_Engine {
@@ -126,15 +122,17 @@ class Cache_Engine {
     Sim_Info info;
 
   public:
-    // Constrcutors
+    // Constructors
     Cache_Engine();
     Cache_Engine(int mem_cyc, int block_size, int l1_size, int l2_size,
                  int l1_cyc, int l2_cyc, int l1_assoc, int l2_assoc,
                  bool is_write_alloc);
 
+    // functions
     void write_to_mem(int address);
-    void read_to_mem(int address);
+    void read_from_mem(int address);
     void print_DEBUG();
+    int evaluate_tag_size(int offset_size_bits, int set_size_bits);
 };
 
 /*********************** Cache_Engine IMPLEMENTATIONS *************************/
@@ -155,7 +153,8 @@ Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
     this->l1_num_of_sets = pow(2, this->l1_size_bits) / this->l1_assoc;
     this->l1_set_size_bits = std::log2(l1_num_of_sets);
     this->cyc_acc_L1 = l1_cyc;
-    this->l1_tag_size_bits; /// to finish
+    this->l1_tag_size_bits =
+        evaluate_tag_size(this->block_size_bits, this->l1_set_size_bits);
 
     // L2
     this->l2_size_bits = l2_size;
@@ -163,11 +162,27 @@ Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
     this->l2_num_of_sets = pow(2, this->l2_size_bits) / this->l2_assoc;
     this->l2_set_size_bits = std::log2(l2_num_of_sets);
     this->cyc_acc_L2 = l2_cyc;
-    this->l2_tag_size_bits; /// to finish
+    this->l2_tag_size_bits =
+        evaluate_tag_size(this->block_size_bits, this->l2_set_size_bits);
 
-    // L1_cache array
+    // Cache_Line arrays
     L1_cache = new Cache_Line[l1_num_of_sets];
     L2_cache = new Cache_Line[l2_num_of_sets];
+
+    for (int i = 0; i < l1_num_of_sets; ++i) {
+        L1_cache[i] = Cache_Line(l1_assoc, this->is_write_alloc);
+    }
+
+    for (int i = 0; i < l2_num_of_sets; ++i) {
+        L2_cache[i] = Cache_Line(l2_assoc, this->is_write_alloc);
+    }
+
+    // Sim_info init
+    this->info.l1_num_acc = 0;
+    this->info.l2_num_acc = 0;
+    this->info.l1_num_miss = 0;
+    this->info.l2_num_miss = 0;
+    this->info.mem_num_acc = 0;
 }
 
 // destructors
@@ -195,16 +210,20 @@ void Cache_Engine::write_to_mem(int address) {
       siyamnu;
     */
 }
-void Cache_Engine::read_to_mem(int address) {}
+
+void Cache_Engine::read_from_mem(int address) {}
+
 void Cache_Engine::print_DEBUG() {}
+
+int Cache_Engine::evaluate_tag_size(int offset_size_bits, int set_size_bits) {
+    return 32 - set_size_bits - offset_size_bits;
+}
 
 // initializing
 Cache_Engine myCache;
 
-
 // FOR DEBUGGING ONLY
-int main()
-{
-  Cache_Line l1 = Cache_Line(3,false);
-  l1.print_DEBUG();
+int main() {
+    Cache_Line l1 = Cache_Line(3, false);
+    l1.print_DEBUG();
 }
