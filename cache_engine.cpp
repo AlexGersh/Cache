@@ -18,15 +18,15 @@ struct Sim_Info {
     int mem_num_acc;
 };
 
+enum STATUS { HIT_NO_REPLACE, HIT_REPLACE_NO_DIRTY, HIT_REPLACE_DIRTY, MISS}; 
 /************************ Cache_Line DECLARATIONS **************************/
 class Cache_Line {
 
     bool *ways;
     int *tags;
-    int tag_size;
     int num_of_ways;
     int *LRU_ways;
-    int *dirty_ways;
+    bool *dirty_ways;
     
     bool is_write_alloc;
     void update_LRU();
@@ -41,7 +41,7 @@ class Cache_Line {
     // read from cache line.
     //
     // return false if miss - else, return true
-    bool read_from_cline(int address);
+    bool read_from_cline(int tag,int offset);
 
     // write to cache line. will replace blocks if full.
     // int* out - pointer to replaced(if any) address block.
@@ -49,7 +49,7 @@ class Cache_Line {
     // line. else, in MISS will add block to the cache line. status 0 - HIT and
     // no repalce status 1 - HIT and replace no dirty bit status 2 - HIT and
     // replace with dirty bit status 3 - MISS
-    void write_to_cline(int address, int *out, int *status);
+    void write_to_cline(int tag,int offset, int *out, int *status);
     void get_LRU();
     
     //print the cache line. only for debugging.
@@ -68,12 +68,40 @@ Cache_Line::Cache_Line(int num_of_ways,bool is_write_alloc)
   this->tags = new int[tag_size];
   this->num_of_ways = num_of_ways;
   this->LRU_ways = new int[tag_size];
-  this->dirty_ways = new int[num_of_ways];
+  this->dirty_ways = new bool[num_of_ways];
   this->is_write_alloc = is_write_alloc;
 }
-bool Cache_Line::read_from_cline(int address) {}
+bool Cache_Line::read_from_cline(int tag,int offset) {}
 
-void Cache_Line::write_to_cline(int address, int *out, int *status) {}
+void Cache_Line::write_to_cline(int tag,int offset, int *out, int *status) 
+{
+
+  // searching for HIT
+  for(int i=0;i<this->num_of_ways;i++)
+  {
+    if(tag==this->tags[i])
+    {
+      //we got a HIT
+      *status = HIT_NO_REPLACE;
+      this->dirty_ways[i] = true;
+      return;
+    }
+  }
+
+  //if MISS
+  if(this->is_write_alloc)
+  {
+    //write allocate police
+    //finding somewhere to place
+    for(int i=0;i<this->num_of_ways;i++)
+    {
+      if(!this->ways[i])
+      {
+        //found empty block
+      }
+    }
+  }
+}
 
 void Cache_Line::print_DEBUG()
 {
