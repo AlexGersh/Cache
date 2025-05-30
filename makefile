@@ -8,11 +8,8 @@ TARGET = cacheSim
 SRCS = cacheSim.cpp cache_engine.cpp
 OBJS = $(SRCS:.cpp=.o)
 
-$(TARGET):$(OBJS) 
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS)
-
-%.o : %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(TARGET): $(SRCS)
+	$(CXX) $(CXXFLAGS) cacheSim.cpp -o $(TARGET)
 
 .PHONY: clean
 clean:

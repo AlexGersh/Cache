@@ -45,15 +45,11 @@ class Cache_Line {
     // status 3 - MISS  
     void write_to_cline(int address,int* out,int* status);
 
-        // r 0x000 00001
-    //  ways[0]=true;
-    // w 0x000 00003
-    //  ways[0] true
 };
 
 Cache_Line::Cache_Line(int tag_size) {}
-bool Cache_Line::read_to_cline(int address) {}
-bool Cache_Line::write_to_cline(int address) {}
+bool Cache_Line::read_from_cline(int address) {return false;}
+void Cache_Line::write_to_cline(int address,int* out,int* status) {}
 
 class Cache_Engine {
   private:
@@ -85,6 +81,7 @@ class Cache_Engine {
 
   public:
     // Constrcutors
+    Cache_Engine();
     Cache_Engine(int mem_cyc, int block_size, int l1_size, int l2_size,
                  int l1_cyc, int l2_cyc, int l1_assoc, int l2_assoc,
                  bool is_write_alloc);
@@ -93,7 +90,7 @@ class Cache_Engine {
     void read_to_mem(int address);
     void print_DEBUG();
 };
-
+Cache_Engine::Cache_Engine(){}
 Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
                            int l2_size, int l1_cyc, int l2_cyc, int l1_assoc,
                            int l2_assoc, bool is_write_alloc) {

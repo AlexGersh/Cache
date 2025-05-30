@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include "cache_engine.cpp"
 
 using std::cerr;
 using std::cout;
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
         cerr << "File not found" << endl;
         return 0;
     }
-
+    Cache_Engine cache1 = Cache_Engine(1,2,3,4,1,2,3,4,false);
     unsigned MemCyc = 0, BSize = 0, L1Size = 0, L2Size = 0, L1Assoc = 0,
              L2Assoc = 0, L1Cyc = 0, L2Cyc = 0, WrAlloc = 0;
 
@@ -67,6 +68,7 @@ int main(int argc, char **argv) {
         }
     }
     // here we should init cache
+
     while (getline(file, line)) {
         stringstream ss(line);
         string address;
