@@ -33,8 +33,9 @@ class Cache_Line {
 
   public:
     // Constructors
+    Cache_Line();
     Cache_Line(int num_of_ways,bool is_write_alloc);
-
+    
     // ----functions
 
     // read from cache line.
@@ -59,7 +60,8 @@ class Cache_Line {
     //  ways[0] true
 };
 
-/*************************** IMPLEMENTATIONS *****************************/
+/*************************** Cache Line IMPLEMENTATIONS *****************************/
+Cache_Line::Cache_Line(){}
 Cache_Line::Cache_Line(int num_of_ways,bool is_write_alloc) 
 {
   this->ways = new bool[tag_size];
