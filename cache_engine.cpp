@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 struct Sim_Info {
 
     // L1_cache
@@ -18,15 +19,16 @@ class Cache_Line {
     bool *ways;
     int *tags;
     int tag_size;
+    int num_of_ways;
     int *LRU_ways;
     int *dirty_ways;
-
+    
     bool is_write_alloc;
     void update_LRU();
 
   public:
     // Constructors
-    Cache_Line(int tag_size);
+    Cache_Line(int num_of_ways,bool is_write_alloc);
 
     // ----functions
 
@@ -43,7 +45,9 @@ class Cache_Line {
     // replace with dirty bit status 3 - MISS
     void write_to_cline(int address, int *out, int *status);
     void get_LRU();
-
+    
+    //print the cache line. only for debugging.
+    void print_DEBUG();
     // r 0x000 00001
     //  ways[0]=true;
     // w 0x000 00003
@@ -51,9 +55,34 @@ class Cache_Line {
 };
 
 /*************************** IMPLEMENTATIONS *****************************/
-Cache_Line::Cache_Line(int tag_size) {}
+Cache_Line::Cache_Line(int num_of_ways,bool is_write_alloc) 
+{
+  this->ways = new bool[tag_size];
+  this->tags = new int[tag_size];
+  this->num_of_ways = num_of_ways;
+  this->LRU_ways = new int[tag_size];
+  this->dirty_ways = new int[num_of_ways];
+  this->is_write_alloc = is_write_alloc;
+}
 bool Cache_Line::read_from_cline(int address) {}
+
 void Cache_Line::write_to_cline(int address, int *out, int *status) {}
+
+void Cache_Line::print_DEBUG()
+{
+  std::cout<<"Cache status: write_alloc_police = " << this->is_write_alloc;
+  for(int i=0;i<this->num_of_ways;i++)
+  {  
+    std::cout<< " WAY"<<i<<" [";
+    std::cout<<" TAG = " << this->tags[i] <<
+                " Is taken = " << this->ways[i] <<
+                " LRU = " <<this->LRU_ways[i] <<
+                " DirtyBit = " <<this->dirty_ways[i]<<"]";
+  }
+
+  std::cout<<std::endl;
+}
+
 
 class Cache_Engine {
   private:
@@ -107,7 +136,7 @@ void Cache_Engine::write_to_mem(int address) {
     int out2;
     int status;
     set_L1 = getSet(address);
-    cline_L1 = this.L1_cache[set];
+    cline_L1 = this->L1_cache[set];
 
     cline_L1.write_to_cline(address,out,status);
 
@@ -128,3 +157,11 @@ void Cache_Engine::print_DEBUG() {}
 
 // initializing
 Cache_Engine myCache;
+
+
+// FOR DEBUGGING ONLY
+int main()
+{
+  Cache_Line l1 = Cache_Line(3,false);
+  l1.print_DEBUG();
+}
