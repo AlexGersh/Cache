@@ -12,7 +12,7 @@
         
     Controlled by user:
         - On cache misses: can work by Write Allocate or No Write Allocate 
-        - Memory size       (X [Bytes])
+        - Cache size        (X [Bytes])
         - Block size        (Y [Bytes])
         - Associativity     (k-way)
         - Access time       (Z [seconds])
