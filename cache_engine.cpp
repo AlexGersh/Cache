@@ -42,7 +42,7 @@ class Cache_Line {
     // Constructors
     Cache_Line();
     Cache_Line(int num_of_ways, bool is_write_alloc);
-
+    Cache_Line& operator=(const Cache_Line&);
     // ----functions
 
     // function will set up all a spsecific way with given parameters
@@ -95,7 +95,27 @@ Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
         InitWay(i, 0, false);
     }
 }
+Cache_Line& Cache_Line::operator=(const Cache_Line& other)
+{
+    if(this == &other) return *this;
+    delete[] tags;
+    delete[] valid_way;
+    delete[] LRU_ways;
+    delete[] dirty_ways;
 
+    tags=new uint32_t[num_of_ways];
+    valid_way=new bool[num_of_ways];
+    LRU_ways= new int[num_of_ways];
+    dirty_ways=new bool[num_of_ways];
+    std::copy(other.valid_way,other.valid_way+num_of_ways,valid_way);
+    std::copy(other.tags,other.tags+num_of_ways,tags);
+    std::copy(other.LRU_ways,other.LRU_ways+num_of_ways,LRU_ways);
+    std::copy(other.dirty_ways,other.dirty_ways+num_of_ways,dirty_ways);
+    
+    is_write_alloc=other.is_write_alloc;
+    num_of_ways=other.num_of_ways;
+    return *this;
+}
 // Functions
 bool Cache_Line::read_from_cline(uint32_t tag) {
     
@@ -210,10 +230,10 @@ void Cache_Line::print_DEBUG() {
 
 // Destructors
 Cache_Line::~Cache_Line() {
-    delete this->valid_way;
-    delete this->tags;
-    delete this->LRU_ways;
-    delete this->dirty_ways;
+    delete[] this->valid_way;
+    delete[] this->tags;
+    delete[] this->LRU_ways;
+    delete[] this->dirty_ways;
 }
 // need to finish
 
@@ -317,7 +337,7 @@ Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
     this->l2_size_bits = l2_size;
     this->l2_num_of_ways = std::pow(2, l2_assoc);
     this->l2_num_of_blocks = std::pow(2, l2_size_bits) / this->block_size;
-    this->l1_num_of_sets = l2_num_of_blocks / l2_num_of_ways;
+    this->l2_num_of_sets = l2_num_of_blocks / l2_num_of_ways;
     this->l2_set_size_bits = std::log2(l2_num_of_sets);
     this->cyc_acc_L2 = l2_cyc;
     this->l2_tag_size_bits =
@@ -325,16 +345,16 @@ Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
     
     std::cout<<"in problem logic"<<std::endl;
     // Cache_Line arrays
-    //this->L1_cache = new Cache_Line[l1_num_of_sets];
-    //this->L2_cache = new Cache_Line[l2_num_of_sets];
+    this->L1_cache = new Cache_Line[l1_num_of_sets];
+    this->L2_cache = new Cache_Line[l2_num_of_sets];
     std::cout<<"good alloc :)"<<std::endl;
-    //for (int i = 0; i < l1_num_of_sets; ++i) {
-    //    L1_cache[i] = Cache_Line(l1_assoc, this->is_write_alloc);
-    //}
+    for (int i = 0; i < l1_num_of_sets; ++i) {
+        L1_cache[i] = Cache_Line(l1_num_of_ways, this->is_write_alloc);
+    }
 
-    //for (int i = 0; i < l2_num_of_sets; ++i) {
-    //    L2_cache[i] = Cache_Line(l2_assoc, this->is_write_alloc);
-    //}
+    for (int i = 0; i < l2_num_of_sets; ++i) {
+        L2_cache[i] = Cache_Line(l2_num_of_ways, this->is_write_alloc);
+    }
 
     // Sim_info init
     this->info.l1_num_acc = 0;
@@ -443,19 +463,18 @@ void Cache_Engine::print_DEBUG() {
         std::cout << "L2 Set Size (bits): " << l2_set_size_bits << std::endl;
         std::cout << "L2 Access Cycles: " << cyc_acc_L2 << std::endl;
         std::cout << "L2 Tag Size (bits): " << l2_tag_size_bits << std::endl;
-/*        
         std::cout<< "--L1 cache--"<<std::endl;
+
         for(int i=0;i<l1_num_of_sets;i++)
         {
           L1_cache[i].print_DEBUG();
         }
-        std::cout<< "--L2 cache--"<<std::endl;
 
+        std::cout<< "--L2 cache--"<<std::endl;
         for(int i=0;i<l2_num_of_sets;i++)
         {
           L2_cache[i].print_DEBUG();
         }
-*/
 
 }
 
@@ -503,7 +522,12 @@ int main() {
                            3,4,1);
       
       engine.print_DEBUG();
-
+      engine.write_to_mem(0x00000000);
+      engine.print_DEBUG();
+      engine.write_to_mem(0x00000000);
+      engine.print_DEBUG();
+      engine.write_to_mem(0x000000a0);
+      engine.print_DEBUG();
 
       return 0;
     
