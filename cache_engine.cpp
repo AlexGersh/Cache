@@ -518,8 +518,8 @@ int main() {
 //     std:cout<<l2.read_from_cline
 //     std::cout << "end of test program" << std::endl;
         
-      Cache_Engine engine= Cache_Engine(100, 5, 16, 20,1,5,
-                           3,4,1);
+      Cache_Engine engine= Cache_Engine(100,2,6,6,1,1,
+                           1,1,1);
       
       engine.print_DEBUG();
       engine.write_to_mem(0x00000000);
