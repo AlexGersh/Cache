@@ -29,7 +29,7 @@ enum STATUS {
 /************************ Cache_Line DECLARATIONS **************************/
 class Cache_Line {
 
-    bool *ways;
+    bool *valid_way;
     uint32_t *tags; // tags[N] tag of wayN.
     int num_of_ways;
     int *LRU_ways;
@@ -54,7 +54,7 @@ class Cache_Line {
     // read from cache line.
     //
     // return false if miss - else, return true
-    bool read_from_cline(uint32_t tag, uint32_t offset);
+    bool read_from_cline(uint32_t tag);
 
     // write to cache line. will replace blocks if full.
     // int* out - pointer to replaced(if any) address block.
@@ -83,7 +83,7 @@ class Cache_Line {
 Cache_Line::Cache_Line() {}
 
 Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
-    this->ways = new bool[num_of_ways];
+    this->valid_way = new bool[num_of_ways];
     this->tags = new uint32_t[num_of_ways];
     this->num_of_ways = num_of_ways;
     this->LRU_ways = new int[num_of_ways];
@@ -97,14 +97,42 @@ Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
 }
 
 // Functions
-bool Cache_Line::read_from_cline(uint32_t tag, uint32_t offset) {}
+bool Cache_Line::read_from_cline(uint32_t tag) {
+    
+    for(int i=0;i<this->num_of_ways;i++)
+    {
+      if(tag == this->tags[i])
+      {
+        this->update_LRU(i);
+        return true;
+      }
+    }
+
+    for(int i=0;i< this-> num_of_ways;i++)
+    {
+        if(!this->valid_way[i])
+        {
+          this->InitWay(i,tag,true);
+          this->update_LRU(i);
+          return true;
+        }
+    }
+
+    int i=this->get_LRU();
+    *out_tag = this->tags[i];
+    // std::cout<< "i:"<<i<<std::endl;
+    this->InitWay(i, tag, true);
+    this->update_LRU(i);
+
+    return false;
+}
 
 void Cache_Line::write_to_cline(uint32_t tag, int *out_tag, int *status) {
 
-    *out_tag = 0; // Default output
+    *out_tag = 0xFFFFFFFF; // Default output
     // searching for HIT
     for (int i = 0; i < this->num_of_ways; i++) {
-        if (tag == this->tags[i]) {
+        if (tag == this->tags[i] && this->valid_way[i]) {
             // we got a HIT
             *status = HIT;
             this->dirty_ways[i] = true;
@@ -115,11 +143,12 @@ void Cache_Line::write_to_cline(uint32_t tag, int *out_tag, int *status) {
 
     // if MISS
     *status = !HIT;
+
     if (this->is_write_alloc) {
         // write allocate police
         // finding somewhere to place
         for (int i = 0; i < this->num_of_ways; i++) {
-            if (!this->ways[i]) {
+            if (!this->valid_way[i]) {
                 // found empty block
                 this->InitWay(i, tag, true);
                 this->update_LRU(i);
@@ -130,7 +159,7 @@ void Cache_Line::write_to_cline(uint32_t tag, int *out_tag, int *status) {
         int i = get_LRU();
         *out_tag = this->tags[i];
         // std::cout<< "i:"<<i<<std::endl;
-        *status = HIT | REPLACE | this->dirty_ways[i];
+        *status = REPLACE | this->dirty_ways[i];
         this->InitWay(i, tag, true);
         this->update_LRU(i);
     }
@@ -163,7 +192,7 @@ int Cache_Line::get_LRU() {
 void Cache_Line::InitWay(int wayN, uint32_t tag, bool is_taken) {
     this->tags[wayN] = tag;
     this->dirty_ways[wayN] = false;
-    this->ways[wayN] = is_taken;
+    this->valid_way[wayN] = is_taken;
     this->LRU_ways[wayN] = 0;
 }
 
@@ -172,7 +201,7 @@ void Cache_Line::print_DEBUG() {
     for (int i = 0; i < this->num_of_ways; i++) {
         std::cout << " WAY" << i << " [";
         std::cout << " TAG = " << this->tags[i]
-                  << " Is taken = " << this->ways[i]
+                  << " Is taken = " << this->valid_way[i]
                   << " LRU = " << this->LRU_ways[i]
                   << " DirtyBit = " << this->dirty_ways[i] << "]";
     }
@@ -182,7 +211,7 @@ void Cache_Line::print_DEBUG() {
 
 // Destructors
 Cache_Line::~Cache_Line() {
-    delete this->ways;
+    delete this->valid_way;
     delete this->tags;
     delete this->LRU_ways;
     delete this->dirty_ways;
@@ -352,14 +381,18 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     int out1;
     int out2;
     int status;
+    
     uint32_t set_L1 = getSet(address, this->l1_set_size_bits);
     uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
     uint32_t tag_L1 = getTag(address, true);
     uint32_t tag_L2 = getTag(address, false);
+    
     Cache_Line cline_L1 = this->L1_cache[set_L1];
     Cache_Line cline_L2 = this->L2_cache[set_L2];
 
     cline_L1.write_to_cline(tag_L1, &out1, &status);
+    
+
 
     // if(staus == 0)
     //   siyamnu
@@ -413,6 +446,9 @@ int main() {
     l2.write_to_cline(105, &out, &status);
     l2.print_DEBUG();
     std::cout << "STATUS after write:" << status << std::endl;
+    
+    std::cout<< "DEBUG for read" << std::endl;
 
+    std:cout<<l2.read_from_cline
     std::cout << "end of test program" << std::endl;
 }
