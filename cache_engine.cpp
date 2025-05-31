@@ -62,7 +62,7 @@ class Cache_Line {
     // line. else, in MISS will add block to the cache line. status 0 - HIT and
     // no repalce status 1 - HIT and replace no dirty bit status 2 - HIT and
     // replace with dirty bit status 3 - MISS
-    void write_to_cline(uint32_t tag, int *out, int *status);
+    void write_to_cline(uint32_t tag, uint32_t *out, int *status);
 
     // get the LRU. it will find the way with the largets LRU number.
     int get_LRU();
@@ -99,7 +99,7 @@ Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
 // Functions
 bool Cache_Line::read_from_cline(uint32_t tag, uint32_t offset) {}
 
-void Cache_Line::write_to_cline(uint32_t tag, int *out, int *status) {
+void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out, int *status) {
 
     *out = 0; // Default output
     // searching for HIT
@@ -345,29 +345,60 @@ uint32_t Cache_Engine::getTag(uint32_t address, bool for_cache_L1) {
 
 //
 void Cache_Engine::write_to_mem(uint32_t address) {
-
-    int out1;
-    int out2;
-    int status;
+    uint32_t out_tag_1;
+    uint32_t out_tag_2;
+    int status_1;
+    int status_2;
     uint32_t set_L1 = getSet(address, this->l1_set_size_bits);
     uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
     uint32_t tag_L1 = getTag(address, true);
     uint32_t tag_L2 = getTag(address, false);
+
     Cache_Line cline_L1 = this->L1_cache[set_L1];
     Cache_Line cline_L2 = this->L2_cache[set_L2];
 
-    cline_L1.write_to_cline(tag_L1, &out1, &status);
+    // writing to L1
+    cline_L1.write_to_cline(tag_L1, &out_tag_1, &status_1);
+    this->info.l1_num_acc++;
 
-    // if(staus == 0)
-    //   siyamnu
-    // if(status == 1)
-    //   siyamnu;
-    // if(status == 2)
-    //   cline_L2.write_to_cline(out1,out2,status);  //only modifing LRU
-    //   siyamnu;
-    // if(status == 3)
-    //   cline_L2.write_to_cline(address,out2,status);
-    //   siyamnu;
+    // if there was a hit, no actions to do
+    // remember the cache works only on WB policy
+
+    // else we get miss. check if we are at write alloc and the cache line is
+    // not full
+    if (this->is_write_alloc && !cline_L1.is_full()) {
+        this->info.l1_num_miss++;
+        cline_L2.read_from_cline(tag_L2, &status_2);
+        this->info.l2_num_acc++;
+
+        if (status_2 == !HIT)
+            this->info.l2_num_miss++;
+    }
+
+    if (this->is_write_alloc && cline_L1.is_full()) {
+        this->info.l1_num_miss++;
+        cline_L2.read_from_cline(tag_L2, &status_2);
+        this->info.l2_num_acc++;
+
+        if (status_2 == !HIT)
+            this->info.l2_num_miss++;
+    }
+
+    // if (status_1 != REPLACE) {
+    //     this->info.l1_num_miss++;
+
+    //     // writing to L2
+    //     cline_L2.write_to_cline(out_tag_1, &out_tag_2, &status_2);
+    //     this->info.l2_num_acc++;
+
+    //     if (status_2 != HIT)
+    //         this->info.l2_num_miss++;
+    // }
+
+    // // else: miss, no replace, no dirty
+    // if (status_1 == !HIT) {
+    //     cline_L2.write_to_cline(out_tag_1, &out_tag_2, &status_2);
+    // }
 }
 
 //
