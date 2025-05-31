@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
+#include <iomanip>
 struct Sim_Info {
 
     // L1_cache
@@ -219,7 +219,7 @@ void Cache_Line::print_DEBUG() {
     std::cout << "Cache status: write_alloc_police = " << this->is_write_alloc;
     for (int i = 0; i < this->num_of_ways; i++) {
         std::cout << " WAY" << i << " [";
-        std::cout << " TAG = " << this->tags[i]
+        std::cout << " TAG = " << std::hex<< this->tags[i]
                   << " Is taken = " << this->valid_way[i]
                   << " LRU = " << this->LRU_ways[i]
                   << " DirtyBit = " << this->dirty_ways[i] << "]";
@@ -459,8 +459,8 @@ void Cache_Engine::read_from_mem(uint32_t address) {
     uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
     uint32_t tag_L1 = getTag(address, true);
     uint32_t tag_L2 = getTag(address, false);
-    Cache_Line cline_L1 = this->L1_cache[set_L1];
-    Cache_Line cline_L2 = this->L2_cache[set_L2];
+    Cache_Line& cline_L1 = this->L1_cache[set_L1];
+    Cache_Line& cline_L2 = this->L2_cache[set_L2];
 
     // trying to find at L1
     status_1_read = cline_L1.read_from_cline(tag_L1);
