@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <cstdint>
 
 struct Sim_Info {
 
@@ -19,19 +20,24 @@ struct Sim_Info {
     int mem_num_acc;
 };
 
-enum STATUS { HIT_NO_REPLACE, HIT_REPLACE_NO_DIRTY, HIT_REPLACE_DIRTY, MISS };
+
+enum STATUS {
+    HIT = 1 <<2,    //0b100
+    REPLACE = 1<<1, //0b010
+    DIRTY = 1<<0    //0b001
+};
 
 /************************ Cache_Line DECLARATIONS **************************/
 class Cache_Line {
 
-    bool *ways;
-    int *tags;
+    bool* ways;
+    uint32_t* tags; //tags[N] tag of wayN.
     int num_of_ways;
-    int *LRU_ways;
-    bool *dirty_ways;
+    int* LRU_ways;
+    bool* dirty_ways;
 
     bool is_write_alloc;
-    void update_LRU();
+    void update_LRU(int i);
 
   public:
     // Constructors
@@ -40,6 +46,11 @@ class Cache_Line {
 
     // ----functions
 
+    // function will set up all a spsecific way with given parameters
+    // @params : int wayN - index of way
+    //           int tag - the tag to setup the way
+    //           int is_taken - if we setting up with empty way or some tag and data.
+    void InitWay(int,uint32_t,bool);
     // read from cache line.
     //
     // return false if miss - else, return true
@@ -51,9 +62,10 @@ class Cache_Line {
     // line. else, in MISS will add block to the cache line. status 0 - HIT and
     // no repalce status 1 - HIT and replace no dirty bit status 2 - HIT and
     // replace with dirty bit status 3 - MISS
-    void write_to_cline(uint32_t tag, uint32_t offset, int *out, int *status);
-
-    void get_LRU();
+    void write_to_cline(uint32_t tag, int *out, int *status);
+    
+    // get the LRU. it will find the way with the largets LRU number.
+    int get_LRU();
 
     // print the cache line. only for debugging.
     void print_DEBUG();
@@ -61,6 +73,11 @@ class Cache_Line {
     //  ways[0]=true;
     // w 0x000 00003
     //  ways[0] true
+    
+    //Destructors
+    ~Cache_Line();
+
+
 };
 
 /************************ Cache Line IMPLEMENTATIONS **************************/
@@ -69,39 +86,95 @@ Cache_Line::Cache_Line() {}
 
 Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
     this->ways = new bool[num_of_ways];
-    this->tags = new int[num_of_ways];
+    this->tags = new uint32_t[num_of_ways];
     this->num_of_ways = num_of_ways;
     this->LRU_ways = new int[num_of_ways];
     this->dirty_ways = new bool[num_of_ways];
     this->is_write_alloc = is_write_alloc;
+
+    //initializing each way
+    for(int i=0;i< num_of_ways;i++)
+    {
+      InitWay(i,0,false);
+    }
+
 }
 
 // Functions
 bool Cache_Line::read_from_cline(uint32_t tag, uint32_t offset) {}
 
-void Cache_Line::write_to_cline(uint32_t tag, uint32_t offset, int *out,
+void Cache_Line::write_to_cline(uint32_t tag, int *out,
                                 int *status) {
-
+    
+    *out = 0; //Default output
     // searching for HIT
     for (int i = 0; i < this->num_of_ways; i++) {
         if (tag == this->tags[i]) {
             // we got a HIT
-            *status = HIT_NO_REPLACE;
+            *status = HIT;
             this->dirty_ways[i] = true;
+            this->update_LRU(i);
             return;
         }
     }
-
+    
     // if MISS
+    *status = 0&HIT ;
     if (this->is_write_alloc) {
         // write allocate police
         // finding somewhere to place
         for (int i = 0; i < this->num_of_ways; i++) {
             if (!this->ways[i]) {
                 // found empty block
+                this->InitWay(i,tag,true);
+                this->update_LRU(i);
+                return;
             }
+            
         }
+        // if found no empty block will need to replace it.
+        int i=get_LRU();
+        *out = this->tags[i];
+        //std::cout<< "i:"<<i<<std::endl;
+        *status = HIT | REPLACE | this->dirty_ways[i]; 
+        this->InitWay(i,tag,true);
+        this->update_LRU(i);
     }
+
+    // if no write allocate police so need to do nothing
+}
+
+void Cache_Line::update_LRU(int i)
+{
+  for (int i=0;i<this->num_of_ways;i++)
+  {
+    this->LRU_ways[i]++;
+  }
+}
+
+int Cache_Line::get_LRU()
+{
+  int max=this->LRU_ways[0];
+  int max_index=0;
+
+  for(int i=1 ;i<this->num_of_ways;i++)
+  {
+      if(this->LRU_ways[i]>max)
+      {
+        max = this->LRU_ways[i];
+        max_index=i;
+      }
+  }
+  return max_index;
+}
+
+void Cache_Line::InitWay(int wayN,uint32_t tag,bool is_taken)
+{
+    this->tags[wayN] = tag;
+    this->dirty_ways[wayN] = false;
+    this->ways[wayN]= is_taken;
+    this->LRU_ways[wayN]=0;
+
 }
 
 void Cache_Line::print_DEBUG() {
@@ -118,6 +191,13 @@ void Cache_Line::print_DEBUG() {
 }
 
 // Destructors
+Cache_Line::~Cache_Line()
+{
+    delete this->ways;
+    delete this->tags;
+    delete this->LRU_ways;
+    delete this->dirty_ways;
+}
 // need to finish
 
 /************************ Cache_Engine DECLARATIONS **************************/
@@ -264,7 +344,38 @@ int Cache_Engine::evaluate_tag_size(int offset_size_bits, int set_size_bits) {
 Cache_Engine myCache;
 
 // FOR DEBUGGING ONLY
-// int main() {
-//     Cache_Line l1 = Cache_Line(3, false);
-//     l1.print_DEBUG();
-// }
+int main() {
+
+  std::cout << "start of test program" << std::endl;
+  Cache_Line l1 = Cache_Line(4, false);
+  Cache_Line l2 = Cache_Line(2,true);
+  l1.print_DEBUG();
+  l2.print_DEBUG();
+
+  int status=0;
+  int out=0;
+  
+  std::cout << "DEBUG for write no allocate" << std::endl;
+  l1.write_to_cline(100,&out,&status);
+  l1.print_DEBUG();
+  std::cout<< "STATUS after write:" << status<<std::endl;
+  
+  std::cout << " DEBUG for write allocate" <<std::endl;
+  l2.write_to_cline(100,&out,&status);
+  l2.print_DEBUG();
+  std::cout<< "STATUS after write:" << status<<std::endl;
+  l2.write_to_cline(100,&out,&status);
+  l2.print_DEBUG();
+  std::cout<< "STATUS after write:" << status<<std::endl;
+  l2.write_to_cline(103,&out,&status);
+  l2.print_DEBUG();
+  std::cout<< "STATUS after write:" << status<<std::endl;
+  
+  l2.write_to_cline(105,&out,&status);
+  l2.print_DEBUG();
+  std::cout<< "STATUS after write:" << status<<std::endl;
+
+  std::cout<< "end of test program" << std::endl;
+
+
+}
