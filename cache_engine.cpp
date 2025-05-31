@@ -298,7 +298,7 @@ class Cache_Engine {
     // prints cache_Engine for debugging
     void print_DEBUG();
     
-    void getSimInfo(double*,double*,double*);
+    void getSimInfo(double&,double&,double&);
     // Static functions
     /* param @address - keeps the addrss of the instruction
      * param @for_cache_L1 - if true: we want the tag for L1, false - for L2
@@ -343,11 +343,9 @@ Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
     this->l2_tag_size_bits =
         evaluate_tag_size(this->block_offset_size_bits, this->l2_set_size_bits);
 
-    std::cout << "in problem logic" << std::endl;
     // Cache_Line arrays
     this->L1_cache = new Cache_Line[l1_num_of_sets];
     this->L2_cache = new Cache_Line[l2_num_of_sets];
-    std::cout << "good alloc :)" << std::endl;
     for (int i = 0; i < l1_num_of_sets; ++i) {
         L1_cache[i] = Cache_Line(l1_num_of_ways, this->is_write_alloc);
     }
@@ -527,16 +525,22 @@ void Cache_Engine::print_DEBUG() {
     }
 }
 
+double round_3(double x) {return std::round(x*1000.0)/1000.0;}
 
 void Cache_Engine::getSimInfo(double& L1MissRate,double& L2MissRate,double& avgAccTime){
       
       L1MissRate = (double)this->info.l1_num_miss/this->info.l1_num_acc;
       L2MissRate = (double)this->info.l2_num_miss/this->info.l2_num_acc;
       
-      int l1_avg_cyc=this->info.l1_num_acc * this->l1_cyc;
-      int l2_avg_cyc=this->info.l2_num_acc * this->l2_cyc;
+      int l1_avg_cyc=this->info.l1_num_acc * this->cyc_acc_L1;
+      int l2_avg_cyc=this->info.l2_num_acc * this->cyc_acc_L2;
       int mem_avg_cyc=this->info.mem_num_acc * this->cyc_acc_mem;
       avgAccTime= l1_avg_cyc +L1MissRate*(l2_avg_cyc+L2MissRate*mem_avg_cyc); 
+      
+      L1MissRate=round_3(L1MissRate);
+      L2MissRate=round_3(L2MissRate);
+      avgAccTime=round_3(avgAccTime);
+
 }
 
 // initializing

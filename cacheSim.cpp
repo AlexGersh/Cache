@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
     double L2MissRate;
     double avgAccTime;
 
-    myCache.getSimInfo(&L1MissRate,&L2MissRate,&avgAccTime);
+    myCache.getSimInfo(L1MissRate,L2MissRate,avgAccTime);
 
     printf("L1miss=%.03f ", L1MissRate);
     printf("L2miss=%.03f ", L2MissRate);
