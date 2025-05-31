@@ -544,7 +544,7 @@ void Cache_Engine::getSimInfo(double& L1MissRate,double& L2MissRate,double& avgA
 }
 
 // initializing
-Cache_Engine myCache;
+//Cache_Engine myCache;
 
 // FOR DEBUGGING ONLY
 //int main() {

@@ -14,7 +14,7 @@ using std::string;
 using std::stringstream;
 
 /*************************** GLOBALS *****************************/
-extern Cache_Engine myCache;
+//extern Cache_Engine myCache;
 
 /*************************** MAIN *****************************/
 
@@ -65,8 +65,9 @@ int main(int argc, char **argv) {
             return 0;
         }
     }
-    myCache = Cache_Engine(MemCyc, BSize, L1Size, L2Size, L1Assoc, L2Assoc,
-                           L1Cyc, L2Cyc, WrAlloc);
+    Cache_Engine myCache = Cache_Engine(MemCyc, BSize, L1Size, L2Size,
+                           L1Cyc, L2Cyc, L1Assoc,L2Assoc,WrAlloc);
+    myCache.print_DEBUG();
     while (getline(file, line)) {
         stringstream ss(line);
         string address;
@@ -100,6 +101,7 @@ int main(int argc, char **argv) {
         {
           myCache.write_to_mem(num);
         }
+        myCache.print_DEBUG();
     }
 
     double L1MissRate;
