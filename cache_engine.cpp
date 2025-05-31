@@ -43,7 +43,7 @@ class Cache_Line {
     // read from cache line.
     //
     // return false if miss - else, return true
-    bool read_from_cline(int tag, int offset);
+    bool read_from_cline(uint32_t tag, uint32_t offset);
 
     // write to cache line. will replace blocks if full.
     // int* out - pointer to replaced(if any) address block.
@@ -51,7 +51,8 @@ class Cache_Line {
     // line. else, in MISS will add block to the cache line. status 0 - HIT and
     // no repalce status 1 - HIT and replace no dirty bit status 2 - HIT and
     // replace with dirty bit status 3 - MISS
-    void write_to_cline(int tag, int offset, int *out, int *status);
+    void write_to_cline(uint32_t tag, uint32_t offset, int *out, int *status);
+
     void get_LRU();
 
     // print the cache line. only for debugging.
@@ -63,7 +64,9 @@ class Cache_Line {
 };
 
 /************************ Cache Line IMPLEMENTATIONS **************************/
+// Constructors
 Cache_Line::Cache_Line() {}
+
 Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
     this->ways = new bool[num_of_ways];
     this->tags = new int[num_of_ways];
@@ -72,9 +75,12 @@ Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
     this->dirty_ways = new bool[num_of_ways];
     this->is_write_alloc = is_write_alloc;
 }
-bool Cache_Line::read_from_cline(int tag, int offset) {}
 
-void Cache_Line::write_to_cline(int tag, int offset, int *out, int *status) {
+// Functions
+bool Cache_Line::read_from_cline(uint32_t tag, uint32_t offset) {}
+
+void Cache_Line::write_to_cline(uint32_t tag, uint32_t offset, int *out,
+                                int *status) {
 
     // searching for HIT
     for (int i = 0; i < this->num_of_ways; i++) {
@@ -110,6 +116,9 @@ void Cache_Line::print_DEBUG() {
 
     std::cout << std::endl;
 }
+
+// Destructors
+// need to finish
 
 /************************ Cache_Engine DECLARATIONS **************************/
 class Cache_Engine {
@@ -152,23 +161,24 @@ class Cache_Engine {
                  int l1_cyc, int l2_cyc, int l1_assoc, int l2_assoc,
                  bool is_write_alloc);
 
-    // functions
-    void write_to_mem(int address);
-    void read_from_mem(int address);
+    // Functions
+    void write_to_mem(uint32_t address);
+    void read_from_mem(uint32_t address);
     void print_DEBUG();
     int evaluate_tag_size(int offset_size_bits, int set_size_bits);
 
-    // destructors
+    // Destructors
     ~Cache_Engine();
 };
 
 /*********************** Cache_Engine IMPLEMENTATIONS *************************/
-// constructors
+// Constructors
 Cache_Engine::Cache_Engine() {}
+
 Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
                            int l2_size, int l1_cyc, int l2_cyc, int l1_assoc,
                            int l2_assoc, bool is_write_alloc) {
-    // general
+    // General
     this->cyc_acc_mem = mem_cyc;
     this->block_size_bits = block_size;
     this->block_size = std::pow(2, this->block_size_bits); // size in bytes
@@ -219,7 +229,7 @@ Cache_Engine::~Cache_Engine() {
 }
 
 // functions
-void Cache_Engine::write_to_mem(int address) {
+void Cache_Engine::write_to_mem(uint32_t address) { // 0xFFFFFFFF >> 2 = 0x
     /*
     int out1;
     int out2;
@@ -242,7 +252,7 @@ void Cache_Engine::write_to_mem(int address) {
     */
 }
 
-void Cache_Engine::read_from_mem(int address) {}
+void Cache_Engine::read_from_mem(uint32_t address) {}
 
 void Cache_Engine::print_DEBUG() {}
 
