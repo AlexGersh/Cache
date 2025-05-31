@@ -42,7 +42,7 @@ class Cache_Line {
     // Constructors
     Cache_Line();
     Cache_Line(int num_of_ways, bool is_write_alloc);
-    Cache_Line& operator=(const Cache_Line&);
+    Cache_Line &operator=(const Cache_Line &);
     // ----functions
 
     // function will set up all a spsecific way with given parameters
@@ -95,50 +95,48 @@ Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
         InitWay(i, 0, false);
     }
 }
-Cache_Line& Cache_Line::operator=(const Cache_Line& other)
-{
-    if(this == &other) return *this;
+Cache_Line &Cache_Line::operator=(const Cache_Line &other) {
+    if (this == &other)
+        return *this;
     delete[] tags;
     delete[] valid_way;
     delete[] LRU_ways;
     delete[] dirty_ways;
 
-    tags=new uint32_t[num_of_ways];
-    valid_way=new bool[num_of_ways];
-    LRU_ways= new int[num_of_ways];
-    dirty_ways=new bool[num_of_ways];
-    std::copy(other.valid_way,other.valid_way+num_of_ways,valid_way);
-    std::copy(other.tags,other.tags+num_of_ways,tags);
-    std::copy(other.LRU_ways,other.LRU_ways+num_of_ways,LRU_ways);
-    std::copy(other.dirty_ways,other.dirty_ways+num_of_ways,dirty_ways);
-    
-    is_write_alloc=other.is_write_alloc;
-    num_of_ways=other.num_of_ways;
+    tags = new uint32_t[num_of_ways];
+    valid_way = new bool[num_of_ways];
+    LRU_ways = new int[num_of_ways];
+    dirty_ways = new bool[num_of_ways];
+    std::copy(other.valid_way, other.valid_way + num_of_ways, valid_way);
+    std::copy(other.tags, other.tags + num_of_ways, tags);
+    std::copy(other.LRU_ways, other.LRU_ways + num_of_ways, LRU_ways);
+    std::copy(other.dirty_ways, other.dirty_ways + num_of_ways, dirty_ways);
+
+    is_write_alloc = other.is_write_alloc;
+    num_of_ways = other.num_of_ways;
     return *this;
 }
 // Functions
 bool Cache_Line::read_from_cline(uint32_t tag) {
-    
-    for(int i=0;i<this->num_of_ways;i++)
-    {
-      if(tag == this->tags[i])
-      {
-        this->update_LRU(i);
-        return true;
-      }
-    }
 
-    for(int i=0;i< this-> num_of_ways;i++)
-    {
-        if(!this->valid_way[i])
-        {
-          this->InitWay(i,tag,true);
-          this->update_LRU(i);
-          return true;
+    // check if tag is in cache line and the way is not empty
+    for (int i = 0; i < this->num_of_ways; i++) {
+        if (this->valid_way[i] && tag == this->tags[i]) {
+            this->update_LRU(i);
+            return true;
         }
     }
 
-    int i=this->get_LRU();
+    // did not
+    for (int i = 0; i < this->num_of_ways; i++) {
+        if (!this->valid_way[i]) {
+            this->InitWay(i, tag, true);
+            this->update_LRU(i);
+            return true;
+        }
+    }
+
+    int i = this->get_LRU();
     //*out_tag = this->tags[i];
     // std::cout<< "i:"<<i<<std::endl;
     this->InitWay(i, tag, true);
@@ -289,7 +287,7 @@ class Cache_Engine {
     // returns tag size in [bits]
     int evaluate_tag_size(int offset_size_bits, int set_size_bits);
 
-        // write to cache
+    // write to cache
     void write_to_mem(uint32_t address);
 
     // read from cache
@@ -297,13 +295,12 @@ class Cache_Engine {
 
     // prints cache_Engine for debugging
     void print_DEBUG();
-    
-    // Static functions 
+
+    // Static functions
     /* param @address - keeps the addrss of the instruction
      * param @for_cache_L1 - if true: we want the tag for L1, false - for L2
      * returns tag bits of the address */
-    uint32_t getTag(uint32_t address,bool for_cache_L1);
-
+    uint32_t getTag(uint32_t address, bool for_cache_L1);
 
     // Destructors
     ~Cache_Engine();
@@ -342,12 +339,12 @@ Cache_Engine::Cache_Engine(int mem_cyc, int block_size, int l1_size,
     this->cyc_acc_L2 = l2_cyc;
     this->l2_tag_size_bits =
         evaluate_tag_size(this->block_offset_size_bits, this->l2_set_size_bits);
-    
-    std::cout<<"in problem logic"<<std::endl;
+
+    std::cout << "in problem logic" << std::endl;
     // Cache_Line arrays
     this->L1_cache = new Cache_Line[l1_num_of_sets];
     this->L2_cache = new Cache_Line[l2_num_of_sets];
-    std::cout<<"good alloc :)"<<std::endl;
+    std::cout << "good alloc :)" << std::endl;
     for (int i = 0; i < l1_num_of_sets; ++i) {
         L1_cache[i] = Cache_Line(l1_num_of_ways, this->is_write_alloc);
     }
@@ -385,11 +382,10 @@ int Cache_Engine::evaluate_tag_size(int offset_size_bits, int set_size_bits) {
 }
 
 //
-uint32_t Cache_Engine::getTag(uint32_t address,bool for_cache_L1) {
-    uint32_t tag_size= this->l2_tag_size_bits;
-    if(for_cache_L1)
-    {
-      tag_size = this->l1_set_size_bits;
+uint32_t Cache_Engine::getTag(uint32_t address, bool for_cache_L1) {
+    uint32_t tag_size = this->l2_tag_size_bits;
+    if (for_cache_L1) {
+        tag_size = this->l1_set_size_bits;
     }
     uint32_t tag_mask = (1U << tag_size) - 1;
     uint32_t temp = address;
@@ -401,8 +397,10 @@ uint32_t Cache_Engine::getTag(uint32_t address,bool for_cache_L1) {
 void Cache_Engine::write_to_mem(uint32_t address) {
     uint32_t out_tag_1;
     uint32_t out_tag_2;
-    int status_1;
-    int status_2;
+    int status_1_write;
+    int status_2_write;
+    int status_1_read;
+    int status_2_read;
     uint32_t set_L1 = getSet(address, this->l1_set_size_bits);
     uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
     uint32_t tag_L1 = getTag(address, true);
@@ -411,7 +409,7 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     Cache_Line cline_L2 = this->L2_cache[set_L2];
 
     // writing to L1
-    cline_L1.write_to_cline(tag_L1, &out_tag_1, &status_1);
+    cline_L1.write_to_cline(tag_L1, &out_tag_1, &status_1_write);
     this->info.l1_num_acc++;
 
     // if there was a hit, no actions to do
@@ -419,63 +417,93 @@ void Cache_Engine::write_to_mem(uint32_t address) {
 
     // else we get miss. check if we are at write alloc and the cache line is
     // not full
-    
 
-    // MISS and REPLACE and dirty block in l1  
-    if(status_1!=HIT && status_1== REPLACE |DIRTY)
-    {
-      cline_L2.read_from_cline(tag_L2);
-      uint32_t new_address= out_tag_1<<(32-this->l1_tag_size_bits);
-      new_address |=set_L1 << (32 - this->l1_tag_size_bits-this->l1_set_size_bits);
-      uint32_t new_Tag=getTag(new_address,false);
-      cline_L2.write_to_cline(new_Tag, &out_tag_2,&status_2);
+    // MISS and REPLACE and dirty block in l1
+    if (status_1_write != HIT && status_1_write == REPLACE | DIRTY) {
+        cline_L2.read_from_cline(tag_L2);
+        uint32_t new_address = out_tag_1 << (32 - this->l1_tag_size_bits);
+        new_address |=
+            set_L1 << (32 - this->l1_tag_size_bits - this->l1_set_size_bits);
+        uint32_t new_Tag = getTag(new_address, false);
+        cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
     }
 
     cline_L2.read_from_cline(tag_L2);
 }
 
 //
-void Cache_Engine::read_from_mem(uint32_t address) {}
+void Cache_Engine::read_from_mem(uint32_t address) {
+    uint32_t out_tag_1;
+    uint32_t out_tag_2;
+    bool status_1_read;
+    bool status_2_read;
+    uint32_t set_L1 = getSet(address, this->l1_set_size_bits);
+    uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
+    uint32_t tag_L1 = getTag(address, true);
+    uint32_t tag_L2 = getTag(address, false);
+    Cache_Line cline_L1 = this->L1_cache[set_L1];
+    Cache_Line cline_L2 = this->L2_cache[set_L2];
+
+    // trying to find at L1
+    status_1_read = cline_L1.read_from_cline(tag_L1);
+    this->info.l1_num_acc++;
+
+    if (status_1_read)
+        return; // found the tag at L1, exit
+
+    // else: missed at L1
+    this->info.l1_num_miss++;
+
+    // looking at L2:
+    status_2_read = cline_L2.read_from_cline(tag_L2);
+    this->info.l2_num_acc++;
+
+    if (status_2_read)
+        return; // found the tag at L2, exit
+
+    // else: missed also at L2
+    this->info.l2_num_miss++;
+    return;
+}
 
 //
 void Cache_Engine::print_DEBUG() {
-        std::cout << "--- Cache Configuration ---" << std::endl;
+    std::cout << "--- Cache Configuration ---" << std::endl;
 
-        std::cout << "DRAM Access Cycles: " << cyc_acc_mem << std::endl;
-        std::cout << "Block Offset Size (bits): " << block_offset_size_bits << std::endl;
-        std::cout << "Block Size (bytes): " << block_size << std::endl;
-        std::cout << "Write Allocate: " << (is_write_alloc ? "Yes" : "No") << std::endl;
+    std::cout << "DRAM Access Cycles: " << cyc_acc_mem << std::endl;
+    std::cout << "Block Offset Size (bits): " << block_offset_size_bits
+              << std::endl;
+    std::cout << "Block Size (bytes): " << block_size << std::endl;
+    std::cout << "Write Allocate: " << (is_write_alloc ? "Yes" : "No")
+              << std::endl;
 
-        std::cout << "\n--- L1 Cache ---" << std::endl;
-        std::cout << "L1 Size (bits): " << l1_size_bits << std::endl;
-        std::cout << "L1 Ways: " << l1_num_of_ways << std::endl;
-        std::cout << "L1 Blocks: " << l1_num_of_blocks << std::endl;
-        std::cout << "L1 Sets: " << l1_num_of_sets << std::endl;
-        std::cout << "L1 Set Size (bits): " << l1_set_size_bits << std::endl;
-        std::cout << "L1 Access Cycles: " << cyc_acc_L1 << std::endl;
-        std::cout << "L1 Tag Size (bits): " << l1_tag_size_bits << std::endl;
+    std::cout << "\n--- L1 Cache ---" << std::endl;
+    std::cout << "L1 Size (bits): " << l1_size_bits << std::endl;
+    std::cout << "L1 Ways: " << l1_num_of_ways << std::endl;
+    std::cout << "L1 Blocks: " << l1_num_of_blocks << std::endl;
+    std::cout << "L1 Sets: " << l1_num_of_sets << std::endl;
+    std::cout << "L1 Set Size (bits): " << l1_set_size_bits << std::endl;
+    std::cout << "L1 Access Cycles: " << cyc_acc_L1 << std::endl;
+    std::cout << "L1 Tag Size (bits): " << l1_tag_size_bits << std::endl;
 
-        std::cout << "\n--- L2 Cache ---" << std::endl;
-        std::cout << "L2 Size (bits): " << l2_size_bits << std::endl;
-        std::cout << "L2 Ways: " << l2_num_of_ways << std::endl;
-        std::cout << "L2 Blocks: " << l2_num_of_blocks << std::endl;
-        std::cout << "L2 Sets: " << l2_num_of_sets << std::endl;
-        std::cout << "L2 Set Size (bits): " << l2_set_size_bits << std::endl;
-        std::cout << "L2 Access Cycles: " << cyc_acc_L2 << std::endl;
-        std::cout << "L2 Tag Size (bits): " << l2_tag_size_bits << std::endl;
-        std::cout<< "--L1 cache--"<<std::endl;
+    std::cout << "\n--- L2 Cache ---" << std::endl;
+    std::cout << "L2 Size (bits): " << l2_size_bits << std::endl;
+    std::cout << "L2 Ways: " << l2_num_of_ways << std::endl;
+    std::cout << "L2 Blocks: " << l2_num_of_blocks << std::endl;
+    std::cout << "L2 Sets: " << l2_num_of_sets << std::endl;
+    std::cout << "L2 Set Size (bits): " << l2_set_size_bits << std::endl;
+    std::cout << "L2 Access Cycles: " << cyc_acc_L2 << std::endl;
+    std::cout << "L2 Tag Size (bits): " << l2_tag_size_bits << std::endl;
+    std::cout << "--L1 cache--" << std::endl;
 
-        for(int i=0;i<l1_num_of_sets;i++)
-        {
-          L1_cache[i].print_DEBUG();
-        }
+    for (int i = 0; i < l1_num_of_sets; i++) {
+        L1_cache[i].print_DEBUG();
+    }
 
-        std::cout<< "--L2 cache--"<<std::endl;
-        for(int i=0;i<l2_num_of_sets;i++)
-        {
-          L2_cache[i].print_DEBUG();
-        }
-
+    std::cout << "--L2 cache--" << std::endl;
+    for (int i = 0; i < l2_num_of_sets; i++) {
+        L2_cache[i].print_DEBUG();
+    }
 }
 
 // initializing
@@ -483,52 +511,50 @@ Cache_Engine myCache;
 
 // FOR DEBUGGING ONLY
 int main() {
-//
-//     std::cout << "start of test program" << std::endl;
-//     Cache_Line l1 = Cache_Line(4, false);
-//     Cache_Line l2 = Cache_Line(2, true);
-//     l1.print_DEBUG();
-//     l2.print_DEBUG();
-//
-//     int status = 0;
-//     int out = 0;
-//
-//     std::cout << "DEBUG for write no allocate" << std::endl;
-//     l1.write_to_cline(100, &out, &status);
-//     l1.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//
-//     std::cout << " DEBUG for write allocate" << std::endl;
-//     l2.write_to_cline(100, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//     l2.write_to_cline(100, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//     l2.write_to_cline(103, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//
-//     l2.write_to_cline(105, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//
-//     std::cout<< "DEBUG for read" << std::endl;
-//
-//     std:cout<<l2.read_from_cline
-//     std::cout << "end of test program" << std::endl;
-        
-      Cache_Engine engine= Cache_Engine(100, 5, 16, 20,1,5,
-                           3,4,1);
-      
-      engine.print_DEBUG();
-      engine.write_to_mem(0x00000000);
-      engine.print_DEBUG();
-      engine.write_to_mem(0x00000000);
-      engine.print_DEBUG();
-      engine.write_to_mem(0x000000a0);
-      engine.print_DEBUG();
+    //
+    //     std::cout << "start of test program" << std::endl;
+    //     Cache_Line l1 = Cache_Line(4, false);
+    //     Cache_Line l2 = Cache_Line(2, true);
+    //     l1.print_DEBUG();
+    //     l2.print_DEBUG();
+    //
+    //     int status = 0;
+    //     int out = 0;
+    //
+    //     std::cout << "DEBUG for write no allocate" << std::endl;
+    //     l1.write_to_cline(100, &out, &status);
+    //     l1.print_DEBUG();
+    //     std::cout << "STATUS after write:" << status << std::endl;
+    //
+    //     std::cout << " DEBUG for write allocate" << std::endl;
+    //     l2.write_to_cline(100, &out, &status);
+    //     l2.print_DEBUG();
+    //     std::cout << "STATUS after write:" << status << std::endl;
+    //     l2.write_to_cline(100, &out, &status);
+    //     l2.print_DEBUG();
+    //     std::cout << "STATUS after write:" << status << std::endl;
+    //     l2.write_to_cline(103, &out, &status);
+    //     l2.print_DEBUG();
+    //     std::cout << "STATUS after write:" << status << std::endl;
+    //
+    //     l2.write_to_cline(105, &out, &status);
+    //     l2.print_DEBUG();
+    //     std::cout << "STATUS after write:" << status << std::endl;
+    //
+    //     std::cout<< "DEBUG for read" << std::endl;
+    //
+    //     std:cout<<l2.read_from_cline
+    //     std::cout << "end of test program" << std::endl;
 
-      return 0;
-    
+    Cache_Engine engine = Cache_Engine(100, 5, 16, 20, 1, 5, 3, 4, 1);
+
+    engine.print_DEBUG();
+    engine.write_to_mem(0x00000000);
+    engine.print_DEBUG();
+    engine.write_to_mem(0x00000000);
+    engine.print_DEBUG();
+    engine.write_to_mem(0x000000a0);
+    engine.print_DEBUG();
+
+    return 0;
 }
