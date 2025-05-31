@@ -99,9 +99,9 @@ Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
 // Functions
 bool Cache_Line::read_from_cline(uint32_t tag, uint32_t offset) {}
 
-void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out, int *status) {
+void Cache_Line::write_to_cline(uint32_t tag, int *out_tag, int *status) {
 
-    *out = 0; // Default output
+    *out_tag = 0; // Default output
     // searching for HIT
     for (int i = 0; i < this->num_of_ways; i++) {
         if (tag == this->tags[i]) {
@@ -114,7 +114,7 @@ void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out, int *status) {
     }
 
     // if MISS
-    *status = 0 & HIT;
+    *status = !HIT;
     if (this->is_write_alloc) {
         // write allocate police
         // finding somewhere to place
@@ -128,7 +128,7 @@ void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out, int *status) {
         }
         // if found no empty block will need to replace it.
         int i = get_LRU();
-        *out = this->tags[i];
+        *out_tag = this->tags[i];
         // std::cout<< "i:"<<i<<std::endl;
         *status = HIT | REPLACE | this->dirty_ways[i];
         this->InitWay(i, tag, true);
@@ -139,22 +139,24 @@ void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out, int *status) {
 }
 
 void Cache_Line::update_LRU(int i) {
-    for (int i = 0; i < this->num_of_ways; i++) {
-        this->LRU_ways[i]++;
+
+    int x = this->LRU_ways[i];
+    this->LRU_ways[i] = this->num_of_ways - 1;
+
+    for (int j = 0; j < this->num_of_ways - 1; j++) {
+        if (j != i && (this->LRU_ways[j] > x))
+            this->LRU_ways[j]--;
     }
 }
 
 int Cache_Line::get_LRU() {
-    int max = this->LRU_ways[0];
-    int max_index = 0;
-
-    for (int i = 1; i < this->num_of_ways; i++) {
-        if (this->LRU_ways[i] > max) {
-            max = this->LRU_ways[i];
-            max_index = i;
+    for (int i = 0; i < this->num_of_ways; i++) {
+        if (this->LRU_ways[i] == 0) {
+            return i;
         }
     }
-    return max_index;
+
+    return 0;
 }
 
 void Cache_Line::InitWay(int wayN, uint32_t tag, bool is_taken) {
@@ -411,36 +413,36 @@ void Cache_Engine::print_DEBUG() {}
 Cache_Engine myCache;
 
 // FOR DEBUGGING ONLY
-// int main() {
+int main() {
 
-//     std::cout << "start of test program" << std::endl;
-//     Cache_Line l1 = Cache_Line(4, false);
-//     Cache_Line l2 = Cache_Line(2, true);
-//     l1.print_DEBUG();
-//     l2.print_DEBUG();
+    std::cout << "start of test program" << std::endl;
+    Cache_Line l1 = Cache_Line(4, false);
+    Cache_Line l2 = Cache_Line(2, true);
+    l1.print_DEBUG();
+    l2.print_DEBUG();
 
-//     int status = 0;
-//     int out = 0;
+    int status = 0;
+    int out = 0;
 
-//     std::cout << "DEBUG for write no allocate" << std::endl;
-//     l1.write_to_cline(100, &out, &status);
-//     l1.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
+    std::cout << "DEBUG for write no allocate" << std::endl;
+    l1.write_to_cline(100, &out, &status);
+    l1.print_DEBUG();
+    std::cout << "STATUS after write:" << status << std::endl;
 
-//     std::cout << " DEBUG for write allocate" << std::endl;
-//     l2.write_to_cline(100, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//     l2.write_to_cline(100, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//     l2.write_to_cline(103, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
+    std::cout << " DEBUG for write allocate" << std::endl;
+    l2.write_to_cline(100, &out, &status);
+    l2.print_DEBUG();
+    std::cout << "STATUS after write:" << status << std::endl;
+    l2.write_to_cline(100, &out, &status);
+    l2.print_DEBUG();
+    std::cout << "STATUS after write:" << status << std::endl;
+    l2.write_to_cline(103, &out, &status);
+    l2.print_DEBUG();
+    std::cout << "STATUS after write:" << status << std::endl;
 
-//     l2.write_to_cline(105, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
+    l2.write_to_cline(105, &out, &status);
+    l2.print_DEBUG();
+    std::cout << "STATUS after write:" << status << std::endl;
 
-//     std::cout << "end of test program" << std::endl;
-// }
+    std::cout << "end of test program" << std::endl;
+}
