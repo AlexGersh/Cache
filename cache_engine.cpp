@@ -169,6 +169,7 @@ void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out_tag, int *status) {
             if (!this->valid_way[i]) {
                 // found empty block
                 this->InitWay(i, tag, true);
+                this->dirty_ways[i]=true;
                 this->update_LRU(i);
                 return;
             }
@@ -179,6 +180,7 @@ void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out_tag, int *status) {
         // std::cout<< "i:"<<i<<std::endl;
         *status = REPLACE | this->dirty_ways[i];
         this->InitWay(i, tag, true);
+        this->dirty_ways[i]=true;
         this->update_LRU(i);
     }
 
@@ -295,13 +297,14 @@ class Cache_Engine {
 
     // prints cache_Engine for debugging
     void print_DEBUG();
-
+    
+    void getSimInfo(double*,double*,double*);
     // Static functions
     /* param @address - keeps the addrss of the instruction
      * param @for_cache_L1 - if true: we want the tag for L1, false - for L2
      * returns tag bits of the address */
     uint32_t getTag(uint32_t address, bool for_cache_L1);
-
+    
     // Destructors
     ~Cache_Engine();
 };
@@ -385,7 +388,7 @@ int Cache_Engine::evaluate_tag_size(int offset_size_bits, int set_size_bits) {
 uint32_t Cache_Engine::getTag(uint32_t address, bool for_cache_L1) {
     uint32_t tag_size = this->l2_tag_size_bits;
     if (for_cache_L1) {
-        tag_size = this->l1_set_size_bits;
+        tag_size = this->l1_tag_size_bits;
     }
     uint32_t tag_mask = (1U << tag_size) - 1;
     uint32_t temp = address;
@@ -405,30 +408,47 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
     uint32_t tag_L1 = getTag(address, true);
     uint32_t tag_L2 = getTag(address, false);
-    Cache_Line cline_L1 = this->L1_cache[set_L1];
-    Cache_Line cline_L2 = this->L2_cache[set_L2];
+    Cache_Line& cline_L1 = this->L1_cache[set_L1];
+    Cache_Line& cline_L2 = this->L2_cache[set_L2];
 
     // writing to L1
     cline_L1.write_to_cline(tag_L1, &out_tag_1, &status_1_write);
     this->info.l1_num_acc++;
-
-    // if there was a hit, no actions to do
+        // if there was a hit, no actions to do
     // remember the cache works only on WB policy
 
     // else we get miss. check if we are at write alloc and the cache line is
     // not full
 
     // MISS and REPLACE and dirty block in l1
-    if (status_1_write != HIT && status_1_write == REPLACE | DIRTY) {
-        cline_L2.read_from_cline(tag_L2);
+    if (status_1_write != HIT && status_1_write == (REPLACE | DIRTY)) {
+        
+        this->info.l1_num_miss++;
+        
+        status_2_read = cline_L2.read_from_cline(tag_L2);
+        this->info.l2_num_acc++;
+        if(!status_2_read)
+        {
+          this->info.l2_num_miss++;
+          this->info.mem_num_acc++;
+        }    
         uint32_t new_address = out_tag_1 << (32 - this->l1_tag_size_bits);
         new_address |=
             set_L1 << (32 - this->l1_tag_size_bits - this->l1_set_size_bits);
         uint32_t new_Tag = getTag(new_address, false);
-        cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
-    }
 
-    cline_L2.read_from_cline(tag_L2);
+        cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
+        
+    }
+    else if(status_1_write !=HIT)
+      this->info.l1_num_miss++;
+      status_2_read= cline_L2.read_from_cline(tag_L2);
+      if(!status_2_read)
+      {
+          this->info.l2_num_miss++;
+          this->info.mem_num_acc++;
+      }
+
 }
 
 //
@@ -463,6 +483,7 @@ void Cache_Engine::read_from_mem(uint32_t address) {
 
     // else: missed also at L2
     this->info.l2_num_miss++;
+    this->info.mem_num_acc++;
     return;
 }
 
@@ -506,11 +527,23 @@ void Cache_Engine::print_DEBUG() {
     }
 }
 
+
+void Cache_Engine::getSimInfo(double& L1MissRate,double& L2MissRate,double& avgAccTime){
+      
+      L1MissRate = (double)this->info.l1_num_miss/this->info.l1_num_acc;
+      L2MissRate = (double)this->info.l2_num_miss/this->info.l2_num_acc;
+      
+      int l1_avg_cyc=this->info.l1_num_acc * this->l1_cyc;
+      int l2_avg_cyc=this->info.l2_num_acc * this->l2_cyc;
+      int mem_avg_cyc=this->info.mem_num_acc * this->cyc_acc_mem;
+      avgAccTime= l1_avg_cyc +L1MissRate*(l2_avg_cyc+L2MissRate*mem_avg_cyc); 
+}
+
 // initializing
 Cache_Engine myCache;
 
 // FOR DEBUGGING ONLY
-int main() {
+//int main() {
 //
 //     std::cout << "start of test program" << std::endl;
 //     Cache_Line l1 = Cache_Line(4, false);
@@ -545,17 +578,18 @@ int main() {
 //
 //     std:cout<<l2.read_from_cline
 //     std::cout << "end of test program" << std::endl;
-        
-      Cache_Engine engine= Cache_Engine(100,2,6,6,1,1,
-                           1,1,1);
-      
-      engine.print_DEBUG();
-      engine.write_to_mem(0x00000000);
-      engine.print_DEBUG();
-      engine.write_to_mem(0x00000000);
-      engine.print_DEBUG();
-      engine.write_to_mem(0x000000a0);
-      engine.print_DEBUG();
-
-    return 0;
-}
+//
+//       Cache_Engine engine= Cache_Engine(100,4,6,7,1,5,
+//                            1,1,1);
+//
+//       engine.print_DEBUG();
+//       engine.write_to_mem(0x00000000);
+//       engine.print_DEBUG();
+//       engine.write_to_mem(0x00000000);
+//       engine.print_DEBUG();
+//       engine.write_to_mem(0x0a0a0a0a);
+//       engine.print_DEBUG();
+//       engine.write_to_mem(0xa000a000);
+//       engine.print_DEBUG();
+//     return 0;
+// }

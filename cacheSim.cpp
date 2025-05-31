@@ -37,7 +37,6 @@ int main(int argc, char **argv) {
         cerr << "File not found" << endl;
         return 0;
     }
-    Cache_Engine cache1 = Cache_Engine(1, 2, 3, 4, 1, 2, 3, 4, false);
     unsigned MemCyc = 0, BSize = 0, L1Size = 0, L2Size = 0, L1Assoc = 0,
              L2Assoc = 0, L1Cyc = 0, L2Cyc = 0, WrAlloc = 0;
 
@@ -93,14 +92,21 @@ int main(int argc, char **argv) {
         // DEBUG - remove this line
         cout << " (dec) " << num << endl;
 
-        // HERE we should simulate access to memory
+        if(operation=='r')
+        {
+          myCache.read_from_mem(num);
+        }
+        else
+        {
+          myCache.write_to_mem(num);
+        }
     }
 
     double L1MissRate;
     double L2MissRate;
     double avgAccTime;
 
-    // HERE final inputL
+    myCache.getSimInfo(&L1MissRate,&L2MissRate,&avgAccTime);
 
     printf("L1miss=%.03f ", L1MissRate);
     printf("L2miss=%.03f ", L2MissRate);
