@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
 struct Sim_Info {
 
     // L1_cache
@@ -54,7 +54,7 @@ class Cache_Line {
     // read from cache line.
     //
     // return false if miss - else, return true
-    void read_from_cline(uint32_t tag,uint32_t* out_tag, int* status);
+    void read_from_cline(uint32_t tag, uint32_t *out_tag, int *status);
 
     // write to cache line. will replace blocks if full.
     // int* out - pointer to replaced(if any) address block.
@@ -80,9 +80,7 @@ class Cache_Line {
 
 /************************ Cache Line IMPLEMENTATIONS **************************/
 // Constructors
-Cache_Line::Cache_Line()  
-{
-}
+Cache_Line::Cache_Line() {}
 
 Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
     this->valid_way = new bool[num_of_ways];
@@ -111,13 +109,12 @@ Cache_Line &Cache_Line::operator=(const Cache_Line &other) {
     valid_way = new bool[num_of_ways];
     LRU_ways = new int[num_of_ways];
     dirty_ways = new bool[num_of_ways];
-    
-    for(int i=0;i< num_of_ways;i++)
-    {
-      this->tags[i]=other.tags[i];
-      this->valid_way[i]=other.valid_way[i];
-      this->LRU_ways[i]=other.LRU_ways[i];
-      this->dirty_ways[i]=other.dirty_ways[i];
+
+    for (int i = 0; i < num_of_ways; i++) {
+        this->tags[i] = other.tags[i];
+        this->valid_way[i] = other.valid_way[i];
+        this->LRU_ways[i] = other.LRU_ways[i];
+        this->dirty_ways[i] = other.dirty_ways[i];
     }
 
     is_write_alloc = other.is_write_alloc;
@@ -125,31 +122,31 @@ Cache_Line &Cache_Line::operator=(const Cache_Line &other) {
     return *this;
 }
 // Functions
-void Cache_Line::read_from_cline(uint32_t tag,uint32_t* out_tag,int* status) {
+void Cache_Line::read_from_cline(uint32_t tag, uint32_t *out_tag, int *status) {
 
     // check if tag is in cache line and the way is not empty
     for (int i = 0; i < this->num_of_ways; i++) {
         if (this->valid_way[i] && tag == this->tags[i]) {
             this->update_LRU(i);
-            *status=HIT;
+            *status = HIT;
             return;
         }
     }
-    *status=!HIT;
-    // MISS - searching for empty block  
+    *status = !HIT;
+    // MISS - searching for empty block
     for (int i = 0; i < this->num_of_ways; i++) {
         if (!this->valid_way[i]) {
             this->InitWay(i, tag, true);
             this->update_LRU(i);
-            
+
             return;
         }
     }
-    
+
     // MISS - no empty block. going to replace block
     int i = this->get_LRU();
     *out_tag = this->tags[i];
-    *status|= (REPLACE|this->dirty_ways[i]);
+    *status |= (REPLACE | this->dirty_ways[i]);
     // std::cout<< "i:"<<i<<std::endl;
     this->InitWay(i, tag, true);
     this->update_LRU(i);
@@ -179,7 +176,7 @@ void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out_tag, int *status) {
             if (!this->valid_way[i]) {
                 // found empty block
                 this->InitWay(i, tag, true);
-                this->dirty_ways[i]=true;
+                this->dirty_ways[i] = true;
                 this->update_LRU(i);
                 return;
             }
@@ -190,7 +187,7 @@ void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out_tag, int *status) {
         // std::cout<< "i:"<<i<<std::endl;
         *status = REPLACE | this->dirty_ways[i];
         this->InitWay(i, tag, true);
-        this->dirty_ways[i]=true;
+        this->dirty_ways[i] = true;
         this->update_LRU(i);
     }
 
@@ -214,7 +211,7 @@ int Cache_Line::get_LRU() {
             return i;
         }
     }
-    //if you got here- there was some error in program
+    // if you got here- there was some error in program
     return -1;
 }
 
@@ -229,7 +226,7 @@ void Cache_Line::print_DEBUG() {
     std::cout << "Cache status: write_alloc_police = " << this->is_write_alloc;
     for (int i = 0; i < this->num_of_ways; i++) {
         std::cout << " WAY" << i << " [";
-        std::cout << " TAG = " << std::hex<< this->tags[i]<<std::dec
+        std::cout << " TAG = " << std::hex << this->tags[i] << std::dec
                   << " Is taken = " << this->valid_way[i]
                   << " LRU = " << this->LRU_ways[i]
                   << " DirtyBit = " << this->dirty_ways[i] << "]";
@@ -307,17 +304,17 @@ class Cache_Engine {
 
     // prints cache_Engine for debugging
     void print_DEBUG();
-    
+
     // print the info off current Sim_Info
     void printSimInfo();
-    
-    void getSimInfo(double&,double&,double&);
+
+    void getSimInfo(double &, double &, double &);
     // Static functions
     /* param @address - keeps the addrss of the instruction
      * param @for_cache_L1 - if true: we want the tag for L1, false - for L2
      * returns tag bits of the address */
     uint32_t getTag(uint32_t address, bool for_cache_L1);
-    
+
     // Destructors
     ~Cache_Engine();
 };
@@ -419,51 +416,48 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
     uint32_t tag_L1 = getTag(address, true);
     uint32_t tag_L2 = getTag(address, false);
-    Cache_Line& cline_L1 = this->L1_cache[set_L1];
-    Cache_Line& cline_L2 = this->L2_cache[set_L2];
-    
-    //DEBUG - delete after 
-    std::cout<< std::hex<< " set_L1= " <<set_L1 <<" set_L2= " << set_L2<< " tag_L1=" << tag_L1<<" tag_L2=" << tag_L2<<std::dec<<std::endl; 
+    Cache_Line &cline_L1 = this->L1_cache[set_L1];
+    Cache_Line &cline_L2 = this->L2_cache[set_L2];
+
+    // DEBUG - delete after
+    std::cout << std::hex << " set_L1= " << set_L1 << " set_L2= " << set_L2
+              << " tag_L1=" << tag_L1 << " tag_L2=" << tag_L2 << std::dec
+              << std::endl;
 
     // writing to L1
     cline_L1.write_to_cline(tag_L1, &out_tag_1, &status_1_write);
     this->info.l1_num_acc++;
-        // if there was a hit, no actions to do
+    // if there was a hit, no actions to do
     // remember the cache works only on WB policy
-    if(status_1_write == HIT)
-      return;
+    if (status_1_write == HIT)
+        return;
 
-    this->info.l2_num_acc++;  
+    this->info.l2_num_acc++;
     this->info.l1_num_miss++;
     // else we get miss. check if we are at write alloc and the cache line is
     // not full
 
     // MISS and REPLACE and dirty block in l1
     if (status_1_write != HIT && status_1_write == (REPLACE | DIRTY)) {
-        
-        
-        cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
-        if(status_2_read!=HIT)
-        {
-          this->info.l2_num_miss++;
-          this->info.mem_num_acc++;
-        }    
+
+        cline_L2.read_from_cline(tag_L2, &out_tag_2, &status_2_read);
+        if (status_2_read != HIT) {
+            this->info.l2_num_miss++;
+            this->info.mem_num_acc++;
+        }
         uint32_t new_address = out_tag_1 << (32 - this->l1_tag_size_bits);
         new_address |=
             set_L1 << (32 - this->l1_tag_size_bits - this->l1_set_size_bits);
         uint32_t new_Tag = getTag(new_address, false);
 
         cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
-        
-    }
-    else if(status_1_write !=HIT)
-    {
-      cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
-      if(status_2_read!=HIT)
-      {
-          this->info.l2_num_miss++;
-          this->info.mem_num_acc++;
-      }
+
+    } else if (status_1_write != HIT) {
+        cline_L2.read_from_cline(tag_L2, &out_tag_2, &status_2_read);
+        if (status_2_read != HIT) {
+            this->info.l2_num_miss++;
+            this->info.mem_num_acc++;
+        }
     }
 }
 
@@ -473,19 +467,20 @@ void Cache_Engine::read_from_mem(uint32_t address) {
     uint32_t out_tag_2;
     int status_2_write;
     int status_1_read;
-    int  status_2_read;
+    int status_2_read;
     uint32_t set_L1 = getSet(address, this->l1_set_size_bits);
     uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
     uint32_t tag_L1 = getTag(address, true);
     uint32_t tag_L2 = getTag(address, false);
-    Cache_Line& cline_L1 = this->L1_cache[set_L1];
-    Cache_Line& cline_L2 = this->L2_cache[set_L2];
+    Cache_Line &cline_L1 = this->L1_cache[set_L1];
+    Cache_Line &cline_L2 = this->L2_cache[set_L2];
 
-
-    std::cout<< std::hex<< " set_L1=" <<set_L1 <<" set_L2=" << set_L2<< " tag_L1=" << tag_L1<<" tag_L2=" << tag_L2<<std::dec<<std::endl; 
+    std::cout << std::hex << " set_L1=" << set_L1 << " set_L2=" << set_L2
+              << " tag_L1=" << tag_L1 << " tag_L2=" << tag_L2 << std::dec
+              << std::endl;
 
     // trying to find at L1
-    cline_L1.read_from_cline(tag_L1,&out_tag_1,&status_1_read);
+    cline_L1.read_from_cline(tag_L1, &out_tag_1, &status_1_read);
     this->info.l1_num_acc++;
 
     if (status_1_read == HIT)
@@ -495,23 +490,23 @@ void Cache_Engine::read_from_mem(uint32_t address) {
     this->info.l1_num_miss++;
 
     // looking at L2:
-    // there was no replace 
-    cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
+    // there was no replace
+    cline_L2.read_from_cline(tag_L2, &out_tag_2, &status_2_read);
     this->info.l2_num_acc++;
-    
-    if(status_1_read == (REPLACE |DIRTY) ){
-        
-        //if replace and dirty bit 
+
+    if (status_1_read == (REPLACE | DIRTY)) {
+
+        // if replace and dirty bit
         uint32_t new_address = out_tag_1 << (32 - this->l1_tag_size_bits);
         new_address |=
             set_L1 << (32 - this->l1_tag_size_bits - this->l1_set_size_bits);
         uint32_t new_Tag = getTag(new_address, false);
-        
-        //out_tag_2 and status_2_write only for proper working function 
-        cline_L2.write_to_cline(new_Tag,&out_tag_2,&status_2_write);
-        // we dont increament l2_num_acc because of the instruction of matala 
+
+        // out_tag_2 and status_2_write only for proper working function
+        cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
+        // we dont increament l2_num_acc because of the instruction of matala
     }
-    
+
     if (status_2_read == HIT)
         return; // found the tag at L2, exit
 
@@ -560,41 +555,40 @@ void Cache_Engine::print_DEBUG() {
     }
 }
 
-double round_3(double x) {return std::round(x*1000.0)/1000.0;}
+double round_3(double x) { return std::round(x * 1000.0) / 1000.0; }
 
-void Cache_Engine::printSimInfo()
-{
-      std::cout<< "===SIM_INFO==="<<std::endl;
+void Cache_Engine::printSimInfo() {
+    std::cout << "===SIM_INFO===" << std::endl;
 
-      std::cout<< "\t l1_num_acc="<<this->info.l1_num_acc<<std::endl;
-      std::cout<< "\t l2_num_acc="<<this->info.l2_num_acc<<std::endl;
-      std::cout<< "\t l1_num_miss="<<this->info.l1_num_miss<<std::endl;
-      std::cout<< "\t l2_num_miss="<<this->info.l2_num_miss<<std::endl;
-      std::cout<< "\t mem_num_acc="<<this->info.mem_num_acc<<std::endl;
+    std::cout << "\t l1_num_acc=" << this->info.l1_num_acc << std::endl;
+    std::cout << "\t l2_num_acc=" << this->info.l2_num_acc << std::endl;
+    std::cout << "\t l1_num_miss=" << this->info.l1_num_miss << std::endl;
+    std::cout << "\t l2_num_miss=" << this->info.l2_num_miss << std::endl;
+    std::cout << "\t mem_num_acc=" << this->info.mem_num_acc << std::endl;
 }
 
-void Cache_Engine::getSimInfo(double& L1MissRate,double& L2MissRate,double& avgAccTime){
-      
-      L1MissRate = (double)this->info.l1_num_miss/this->info.l1_num_acc;
-      L2MissRate = (double)this->info.l2_num_miss/this->info.l2_num_acc;
-      
-      int l1_total_cyc=this->cyc_acc_L1*this->info.l1_num_acc;
-      int l2_total_cyc=this->cyc_acc_L2*this->info.l2_num_acc;
-      int mem_avg_cyc=this->info.mem_num_acc * this->cyc_acc_mem;
-      avgAccTime= l1_total_cyc + L1MissRate*(l2_total_cyc+L2MissRate*mem_avg_cyc); 
-      
-      //avgAccTime = (this->info.l1_num_acc*l1_total_cyc + L1MissRate*this->info.l1_num_acc+L2MissRate*mem_avg_cyc)/this->info.l1_num_acc;
+void Cache_Engine::getSimInfo(double &L1MissRate, double &L2MissRate,
+                              double &avgAccTime) {
 
-      L1MissRate=round_3(L1MissRate);
-      L2MissRate=round_3(L2MissRate);
-      avgAccTime=round_3(avgAccTime);
+    L1MissRate = (double)this->info.l1_num_miss / this->info.l1_num_acc;
+    L2MissRate = (double)this->info.l2_num_miss / this->info.l2_num_acc;
+
+    int t_l1 = this->cyc_acc_L1;
+    int t_l2 = this->cyc_acc_L2;
+    int t_mem = this->cyc_acc_mem;
+
+    avgAccTime = t_l1 + L1MissRate * (t_l2 + L2MissRate * t_mem);
+
+    L1MissRate = round_3(L1MissRate);
+    L2MissRate = round_3(L2MissRate);
+    avgAccTime = round_3(avgAccTime);
 }
 
 // initializing
-//Cache_Engine myCache;
+// Cache_Engine myCache;
 
 // FOR DEBUGGING ONLY
-//int main() {
+// int main() {
 //
 //     std::cout << "start of test program" << std::endl;
 //     Cache_Line l1 = Cache_Line(4, false);
