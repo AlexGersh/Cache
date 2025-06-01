@@ -308,6 +308,9 @@ class Cache_Engine {
     // prints cache_Engine for debugging
     void print_DEBUG();
     
+    // print the info off current Sim_Info
+    void printSimInfo();
+    
     void getSimInfo(double&,double&,double&);
     // Static functions
     /* param @address - keeps the addrss of the instruction
@@ -427,14 +430,14 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     this->info.l1_num_acc++;
         // if there was a hit, no actions to do
     // remember the cache works only on WB policy
-
+    if(status_1_write != HIT)
+      this->info.l1_num_miss++;
     // else we get miss. check if we are at write alloc and the cache line is
     // not full
 
     // MISS and REPLACE and dirty block in l1
     if (status_1_write != HIT && status_1_write == (REPLACE | DIRTY)) {
         
-        this->info.l1_num_miss++;
         
         cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
         this->info.l2_num_acc++;
@@ -453,7 +456,6 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     }
     else if(status_1_write !=HIT)
     {
-      this->info.l1_num_miss++;
       cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
       if(status_2_read!=HIT)
       {
@@ -558,16 +560,29 @@ void Cache_Engine::print_DEBUG() {
 
 double round_3(double x) {return std::round(x*1000.0)/1000.0;}
 
+void Cache_Engine::printSimInfo()
+{
+      std::cout<< "===SIM_INFO==="<<std::endl;
+
+      std::cout<< "\t l1_num_acc="<<this->info.l1_num_acc<<std::endl;
+      std::cout<< "\t l2_num_acc="<<this->info.l2_num_acc<<std::endl;
+      std::cout<< "\t l1_num_miss="<<this->info.l1_num_miss<<std::endl;
+      std::cout<< "\t l2_num_miss="<<this->info.l2_num_miss<<std::endl;
+      std::cout<< "\t mem_num_acc="<<this->info.mem_num_acc<<std::endl;
+}
+
 void Cache_Engine::getSimInfo(double& L1MissRate,double& L2MissRate,double& avgAccTime){
       
       L1MissRate = (double)this->info.l1_num_miss/this->info.l1_num_acc;
       L2MissRate = (double)this->info.l2_num_miss/this->info.l2_num_acc;
       
-      int l1_avg_cyc=this->info.l1_num_acc * this->cyc_acc_L1;
-      int l2_avg_cyc=this->info.l2_num_acc * this->cyc_acc_L2;
+      int l1_avg_cyc=this->cyc_acc_L1;
+      int l2_avg_cyc=this->cyc_acc_L2;
       int mem_avg_cyc=this->info.mem_num_acc * this->cyc_acc_mem;
-      avgAccTime= l1_avg_cyc +L1MissRate*(l2_avg_cyc+L2MissRate*mem_avg_cyc); 
+      //avgAccTime= l1_num_acc*l1_avg_cyc + L1MissRate*(l2_avg_cyc+L2MissRate*mem_avg_cyc); 
       
+      avgAccTime = (this->info.l1_num_acc*l1_avg_cyc + L1MissRate*this->info.l1_num_acc+L2MissRate*mem_avg_cyc)/this->info.l1_num_acc;
+
       L1MissRate=round_3(L1MissRate);
       L2MissRate=round_3(L2MissRate);
       avgAccTime=round_3(avgAccTime);
