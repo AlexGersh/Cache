@@ -102,6 +102,7 @@ int main(int argc, char **argv) {
           myCache.write_to_mem(num);
         }
         myCache.print_DEBUG();
+        myCache.printSimInfo();
     }
 
     double L1MissRate;

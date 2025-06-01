@@ -430,8 +430,11 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     this->info.l1_num_acc++;
         // if there was a hit, no actions to do
     // remember the cache works only on WB policy
-    if(status_1_write != HIT)
-      this->info.l1_num_miss++;
+    if(status_1_write == HIT)
+      return;
+
+    this->info.l2_num_acc++;  
+    this->info.l1_num_miss++;
     // else we get miss. check if we are at write alloc and the cache line is
     // not full
 
@@ -440,7 +443,6 @@ void Cache_Engine::write_to_mem(uint32_t address) {
         
         
         cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
-        this->info.l2_num_acc++;
         if(status_2_read!=HIT)
         {
           this->info.l2_num_miss++;
@@ -576,17 +578,16 @@ void Cache_Engine::getSimInfo(double& L1MissRate,double& L2MissRate,double& avgA
       L1MissRate = (double)this->info.l1_num_miss/this->info.l1_num_acc;
       L2MissRate = (double)this->info.l2_num_miss/this->info.l2_num_acc;
       
-      int l1_avg_cyc=this->cyc_acc_L1;
-      int l2_avg_cyc=this->cyc_acc_L2;
+      int l1_total_cyc=this->cyc_acc_L1*this->info.l1_num_acc;
+      int l2_total_cyc=this->cyc_acc_L2*this->info.l2_num_acc;
       int mem_avg_cyc=this->info.mem_num_acc * this->cyc_acc_mem;
-      //avgAccTime= l1_num_acc*l1_avg_cyc + L1MissRate*(l2_avg_cyc+L2MissRate*mem_avg_cyc); 
+      avgAccTime= l1_total_cyc + L1MissRate*(l2_total_cyc+L2MissRate*mem_avg_cyc); 
       
-      avgAccTime = (this->info.l1_num_acc*l1_avg_cyc + L1MissRate*this->info.l1_num_acc+L2MissRate*mem_avg_cyc)/this->info.l1_num_acc;
+      //avgAccTime = (this->info.l1_num_acc*l1_total_cyc + L1MissRate*this->info.l1_num_acc+L2MissRate*mem_avg_cyc)/this->info.l1_num_acc;
 
       L1MissRate=round_3(L1MissRate);
       L2MissRate=round_3(L2MissRate);
       avgAccTime=round_3(avgAccTime);
-
 }
 
 // initializing
