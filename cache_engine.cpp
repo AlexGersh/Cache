@@ -54,7 +54,7 @@ class Cache_Line {
     // read from cache line.
     //
     // return false if miss - else, return true
-    bool read_from_cline(uint32_t tag);
+    void read_from_cline(uint32_t tag,uint32_t* out_tag, int* status);
 
     // write to cache line. will replace blocks if full.
     // int* out - pointer to replaced(if any) address block.
@@ -80,7 +80,15 @@ class Cache_Line {
 
 /************************ Cache Line IMPLEMENTATIONS **************************/
 // Constructors
-Cache_Line::Cache_Line() {}
+Cache_Line::Cache_Line() 
+{
+  this->valid_way = new bool[0];
+  this->tags= new uint32_t[0];
+  this->num_of_ways=0;
+  this->LRU_ways= new int[0];
+  this->dirty_ways= new bool[0];
+
+}
 
 Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
     this->valid_way = new bool[num_of_ways];
@@ -117,32 +125,34 @@ Cache_Line &Cache_Line::operator=(const Cache_Line &other) {
     return *this;
 }
 // Functions
-bool Cache_Line::read_from_cline(uint32_t tag) {
+void Cache_Line::read_from_cline(uint32_t tag,uint32_t* out_tag,int* status) {
 
     // check if tag is in cache line and the way is not empty
     for (int i = 0; i < this->num_of_ways; i++) {
         if (this->valid_way[i] && tag == this->tags[i]) {
             this->update_LRU(i);
-            return true;
+            *status=HIT;
+            return;
         }
     }
-
-    // did not
+    *status=!HIT;
+    // MISS - searching for empty block  
     for (int i = 0; i < this->num_of_ways; i++) {
         if (!this->valid_way[i]) {
             this->InitWay(i, tag, true);
             this->update_LRU(i);
-            return true;
+            
+            return;
         }
     }
-
+    
+    // MISS - no empty block. going to replace block
     int i = this->get_LRU();
-    //*out_tag = this->tags[i];
+    *out_tag = this->tags[i];
+    *status|= (REPLACE|this->dirty_ways[i]);
     // std::cout<< "i:"<<i<<std::endl;
     this->InitWay(i, tag, true);
     this->update_LRU(i);
-
-    return false;
 }
 
 void Cache_Line::write_to_cline(uint32_t tag, uint32_t *out_tag, int *status) {
@@ -204,8 +214,8 @@ int Cache_Line::get_LRU() {
             return i;
         }
     }
-
-    return 0;
+    //if you got here- there was some error in program
+    return -1;
 }
 
 void Cache_Line::InitWay(int wayN, uint32_t tag, bool is_taken) {
@@ -219,7 +229,7 @@ void Cache_Line::print_DEBUG() {
     std::cout << "Cache status: write_alloc_police = " << this->is_write_alloc;
     for (int i = 0; i < this->num_of_ways; i++) {
         std::cout << " WAY" << i << " [";
-        std::cout << " TAG = " << std::hex<< this->tags[i]
+        std::cout << " TAG = " << std::hex<< this->tags[i]<<std::dec
                   << " Is taken = " << this->valid_way[i]
                   << " LRU = " << this->LRU_ways[i]
                   << " DirtyBit = " << this->dirty_ways[i] << "]";
@@ -408,6 +418,9 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     uint32_t tag_L2 = getTag(address, false);
     Cache_Line& cline_L1 = this->L1_cache[set_L1];
     Cache_Line& cline_L2 = this->L2_cache[set_L2];
+    
+    //DEBUG - delete after 
+    std::cout<< std::hex<< " set_L1= " <<set_L1 <<" set_L2= " << set_L2<< " tag_L1=" << tag_L1<<" tag_L2=" << tag_L2<<std::dec<<std::endl; 
 
     // writing to L1
     cline_L1.write_to_cline(tag_L1, &out_tag_1, &status_1_write);
@@ -423,9 +436,9 @@ void Cache_Engine::write_to_mem(uint32_t address) {
         
         this->info.l1_num_miss++;
         
-        status_2_read = cline_L2.read_from_cline(tag_L2);
+        cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
         this->info.l2_num_acc++;
-        if(!status_2_read)
+        if(status_2_read!=HIT)
         {
           this->info.l2_num_miss++;
           this->info.mem_num_acc++;
@@ -439,22 +452,24 @@ void Cache_Engine::write_to_mem(uint32_t address) {
         
     }
     else if(status_1_write !=HIT)
+    {
       this->info.l1_num_miss++;
-      status_2_read= cline_L2.read_from_cline(tag_L2);
-      if(!status_2_read)
+      cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
+      if(status_2_read!=HIT)
       {
           this->info.l2_num_miss++;
           this->info.mem_num_acc++;
       }
-
+    }
 }
 
 //
 void Cache_Engine::read_from_mem(uint32_t address) {
     uint32_t out_tag_1;
     uint32_t out_tag_2;
-    bool status_1_read;
-    bool status_2_read;
+    int status_2_write;
+    int status_1_read;
+    int  status_2_read;
     uint32_t set_L1 = getSet(address, this->l1_set_size_bits);
     uint32_t set_L2 = getSet(address, this->l2_set_size_bits);
     uint32_t tag_L1 = getTag(address, true);
@@ -462,27 +477,43 @@ void Cache_Engine::read_from_mem(uint32_t address) {
     Cache_Line& cline_L1 = this->L1_cache[set_L1];
     Cache_Line& cline_L2 = this->L2_cache[set_L2];
 
+
+    std::cout<< std::hex<< " set_L1=" <<set_L1 <<" set_L2=" << set_L2<< " tag_L1=" << tag_L1<<" tag_L2=" << tag_L2<<std::dec<<std::endl; 
+
     // trying to find at L1
-    status_1_read = cline_L1.read_from_cline(tag_L1);
+    cline_L1.read_from_cline(tag_L1,&out_tag_1,&status_1_read);
     this->info.l1_num_acc++;
 
-    if (status_1_read)
+    if (status_1_read == HIT)
         return; // found the tag at L1, exit
 
     // else: missed at L1
     this->info.l1_num_miss++;
 
     // looking at L2:
-    status_2_read = cline_L2.read_from_cline(tag_L2);
+    // there was no replace 
+    cline_L2.read_from_cline(tag_L2,&out_tag_2,&status_2_read);
     this->info.l2_num_acc++;
-
-    if (status_2_read)
+    
+    if(status_1_read == (REPLACE |DIRTY) ){
+        
+        //if replace and dirty bit 
+        uint32_t new_address = out_tag_1 << (32 - this->l1_tag_size_bits);
+        new_address |=
+            set_L1 << (32 - this->l1_tag_size_bits - this->l1_set_size_bits);
+        uint32_t new_Tag = getTag(new_address, false);
+        
+        //out_tag_2 and status_2_write only for proper working function 
+        cline_L2.write_to_cline(new_Tag,&out_tag_2,&status_2_write);
+        // we dont increament l2_num_acc because of the instruction of matala 
+    }
+    
+    if (status_2_read == HIT)
         return; // found the tag at L2, exit
 
     // else: missed also at L2
     this->info.l2_num_miss++;
     this->info.mem_num_acc++;
-    return;
 }
 
 //
