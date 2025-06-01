@@ -80,14 +80,8 @@ class Cache_Line {
 
 /************************ Cache Line IMPLEMENTATIONS **************************/
 // Constructors
-Cache_Line::Cache_Line() 
+Cache_Line::Cache_Line()  
 {
-  this->valid_way = new bool[0];
-  this->tags= new uint32_t[0];
-  this->num_of_ways=0;
-  this->LRU_ways= new int[0];
-  this->dirty_ways= new bool[0];
-
 }
 
 Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
@@ -103,8 +97,10 @@ Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
         InitWay(i, 0, false);
     }
 }
+
 Cache_Line &Cache_Line::operator=(const Cache_Line &other) {
     if (this == &other)
+
         return *this;
     delete[] tags;
     delete[] valid_way;
@@ -115,10 +111,14 @@ Cache_Line &Cache_Line::operator=(const Cache_Line &other) {
     valid_way = new bool[num_of_ways];
     LRU_ways = new int[num_of_ways];
     dirty_ways = new bool[num_of_ways];
-    std::copy(other.valid_way, other.valid_way + num_of_ways, valid_way);
-    std::copy(other.tags, other.tags + num_of_ways, tags);
-    std::copy(other.LRU_ways, other.LRU_ways + num_of_ways, LRU_ways);
-    std::copy(other.dirty_ways, other.dirty_ways + num_of_ways, dirty_ways);
+    
+    for(int i=0;i< num_of_ways;i++)
+    {
+      this->tags[i]=other.tags[i];
+      this->valid_way[i]=other.valid_way[i];
+      this->LRU_ways[i]=other.LRU_ways[i];
+      this->dirty_ways[i]=other.dirty_ways[i];
+    }
 
     is_write_alloc = other.is_write_alloc;
     num_of_ways = other.num_of_ways;
@@ -202,7 +202,7 @@ void Cache_Line::update_LRU(int i) {
     int x = this->LRU_ways[i];
     this->LRU_ways[i] = this->num_of_ways - 1;
 
-    for (int j = 0; j < this->num_of_ways - 1; j++) {
+    for (int j = 0; j < this->num_of_ways; j++) {
         if (j != i && (this->LRU_ways[j] > x))
             this->LRU_ways[j]--;
     }
