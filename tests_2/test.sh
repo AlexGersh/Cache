@@ -9,7 +9,8 @@ echo "Running tests..."
 echo "A test PASSES if there is no difference between outputs."
 echo
 
-# Ensure difflogs directory exists
+# Ensure necessary directories exist
+mkdir -p YourOutputs
 mkdir -p difflogs
 
 # Gather and sort all tests/test*.command in version order, then iterate
@@ -18,13 +19,13 @@ printf "%s\n" tests/test*.command | sort -V | while read -r cmdpath; do
     testname=$(basename "$cmdpath" .command)
 
     # Paths for our output, expected output, and diff log
-    yours_out="${testname}.YoursOut"
+    yours_out="YourOutputs/${testname}.YoursOut"
     expected="tests/${testname}.out"
     difflog="difflogs/${testname}.diff"
 
     echo -n "Running ${testname}... "
 
-    # Run the .command file and capture its stdout
+    # Run the .command file and capture its stdout into the subdirectory
     bash "$cmdpath" > "$yours_out"
 
     # Compare captured output with expected
@@ -37,8 +38,8 @@ printf "%s\n" tests/test*.command | sort -V | while read -r cmdpath; do
         their_output=$(<"$expected")
         our_output=$(<"$yours_out")
 
-        # Print FAILED in red, plus “Expected: … | Yours: …” all on the same line
-        echo -e "${RED}FAILED${NC} \nExpected: ${their_output}\nYourssss: ${our_output}"
+        # Print FAILED in red
+        echo -e "${RED}FAILED${NC} \nExpected: ${their_output} \nYourssss: ${our_output}"
 
         # Also save the diff into difflogs/
         diff "$yours_out" "$expected" > "$difflog"
