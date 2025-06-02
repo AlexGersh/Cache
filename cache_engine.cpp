@@ -73,6 +73,8 @@ class Cache_Line {
     // if no write allocate police in MISS will not add the block to the cache
     void write_to_cline(uint32_t tag, uint32_t *out, int *status);
 
+    void invalidate_cline(uint32_t tag);
+
     // get the LRU. it will find the way with the largets LRU number.
     // returns index i of the way[i] that by LRU policy
     int get_LRU();
@@ -225,6 +227,19 @@ int Cache_Line::get_LRU() {
     }
     // If we got here - there was error in program. Will get SEGFAULT
     return -1;
+}
+
+void Cache_Line::invalidate_cline(uint32_t tag)
+{
+    for(int i=0;i<this->num_of_ways;i++)
+    {
+        if(this->tags[i]== tag && this->valid_way[i])
+        {
+            this->valid_way[i]=false;
+            return;
+        }
+    }
+
 }
 
 //
@@ -466,6 +481,18 @@ void Cache_Engine::write_to_mem(uint32_t address) {
 
         // writing to L2
         cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
+
+        if(status_2_write == REPLACE){
+
+             uint32_t new_address = out_tag_2 << (32 - this->l2_tag_size_bits);
+                    new_address |=
+            set_L2 << (32 - this->l2_tag_size_bits - this->l2_set_size_bits);
+            uint32_t new_Tag = getTag(new_address, false);
+            
+            cline_L1.invalidate_cline(new_tag);
+
+        }
+
 
     } else if (status_1_write != HIT) {
         cline_L2.write_to_cline(tag_L2, &out_tag_2, &status_2_write);
