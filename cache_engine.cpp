@@ -80,7 +80,7 @@ class Cache_Line {
 
 /************************ Cache Line IMPLEMENTATIONS **************************/
 // Constructors
-Cache_Line::Cache_Line() {}
+Cache_Line::Cache_Line():Cache_Line(1,false) {}
 
 Cache_Line::Cache_Line(int num_of_ways, bool is_write_alloc) {
     this->valid_way = new bool[num_of_ways];
@@ -105,12 +105,12 @@ Cache_Line &Cache_Line::operator=(const Cache_Line &other) {
     delete[] LRU_ways;
     delete[] dirty_ways;
 
-    tags = new uint32_t[num_of_ways];
-    valid_way = new bool[num_of_ways];
-    LRU_ways = new int[num_of_ways];
-    dirty_ways = new bool[num_of_ways];
+    tags = new uint32_t[other.num_of_ways];
+    valid_way = new bool[other.num_of_ways];
+    LRU_ways = new int[other.num_of_ways];
+    dirty_ways = new bool[other.num_of_ways];
 
-    for (int i = 0; i < num_of_ways; i++) {
+    for (int i = 0; i < other.num_of_ways; i++) {
         this->tags[i] = other.tags[i];
         this->valid_way[i] = other.valid_way[i];
         this->LRU_ways[i] = other.LRU_ways[i];
