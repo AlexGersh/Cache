@@ -567,7 +567,24 @@ void Cache_Engine::print_DEBUG() {
     }
 }
 
-double round_3(double x) { return std::round(x * 1000.0) / 1000.0; }
+double round_3(double x) { 
+
+  /*double scaled = x*10000.0; // shift by 4
+  int intPart=static_cast<int>(scaled);
+  int fourthDigit= intPart %10;
+
+  double base= std::floor(scaled/10.0);
+
+  if(fourthDigit >=6)
+  {
+    base +=1.0;
+  }
+
+  return base/1000.0;
+*/
+
+  return std::round(x*100000.0)/100000.0;
+}
 
 void Cache_Engine::printSimInfo() {
     std::cout << "===SIM_INFO===" << std::endl;
@@ -590,63 +607,10 @@ void Cache_Engine::getSimInfo(double &L1MissRate, double &L2MissRate,
     int t_mem = this->cyc_acc_mem;
 
     avgAccTime = t_l1 + L1MissRate * (t_l2 + L2MissRate * t_mem);
+    
 
     L1MissRate = round_3(L1MissRate);
     L2MissRate = round_3(L2MissRate);
     avgAccTime = round_3(avgAccTime);
 }
 
-// initializing
-// Cache_Engine myCache;
-
-// FOR DEBUGGING ONLY
-// int main() {
-//
-//     std::cout << "start of test program" << std::endl;
-//     Cache_Line l1 = Cache_Line(4, false);
-//     Cache_Line l2 = Cache_Line(2, true);
-//     l1.print_DEBUG();
-//     l2.print_DEBUG();
-//
-//     int status = 0;
-//     int out = 0;
-//
-//     std::cout << "DEBUG for write no allocate" << std::endl;
-//     l1.write_to_cline(100, &out, &status);
-//     l1.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//
-//     std::cout << " DEBUG for write allocate" << std::endl;
-//     l2.write_to_cline(100, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//     l2.write_to_cline(100, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//     l2.write_to_cline(103, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//
-//     l2.write_to_cline(105, &out, &status);
-//     l2.print_DEBUG();
-//     std::cout << "STATUS after write:" << status << std::endl;
-//
-//     std::cout<< "DEBUG for read" << std::endl;
-//
-//     std:cout<<l2.read_from_cline
-//     std::cout << "end of test program" << std::endl;
-//
-//       Cache_Engine engine= Cache_Engine(100,4,6,7,1,5,
-//                            1,1,1);
-//
-//       engine.print_DEBUG();
-//       engine.write_to_mem(0x00000000);
-//       engine.print_DEBUG();
-//       engine.write_to_mem(0x00000000);
-//       engine.print_DEBUG();
-//       engine.write_to_mem(0x0a0a0a0a);
-//       engine.print_DEBUG();
-//       engine.write_to_mem(0xa000a000);
-//       engine.print_DEBUG();
-//     return 0;
-// }
