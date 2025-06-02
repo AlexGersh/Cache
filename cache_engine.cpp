@@ -142,6 +142,8 @@ void Cache_Line::read_from_cline(uint32_t tag, uint32_t *out_tag, int *status) {
     }
     *status = !HIT;
     // MISS - searching for empty block
+    
+    
     for (int i = 0; i < this->num_of_ways; i++) {
         if (!this->valid_way[i]) {
             this->InitWay(i, tag, true);
@@ -428,10 +430,10 @@ void Cache_Engine::write_to_mem(uint32_t address) {
     Cache_Line &cline_L2 = this->L2_cache[set_L2];
 
     // DEBUG - delete after
-    /*std::cout << std::hex << " set_L1= " << set_L1 << " set_L2= " << set_L2
+    DEBUG_COMMAND(std::cout << std::hex << " set_L1= " << set_L1 << " set_L2= " << set_L2
               << " tag_L1=" << tag_L1 << " tag_L2=" << tag_L2 << std::dec
-              << std::endl;
-*/
+              << std::endl);
+
     // writing to L1
     cline_L1.write_to_cline(tag_L1, &out_tag_1, &status_1_write);
     this->info.l1_num_acc++;
@@ -461,8 +463,8 @@ void Cache_Engine::write_to_mem(uint32_t address) {
         cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
 
     } else if (status_1_write != HIT) {
-        cline_L2.read_from_cline(tag_L2, &out_tag_2, &status_2_read);
-        if (status_2_read != HIT) {
+        cline_L2.write_to_cline(tag_L2, &out_tag_2, &status_2_write);
+        if (status_2_write != HIT) {
             this->info.l2_num_miss++;
             this->info.mem_num_acc++;
         }
@@ -484,11 +486,11 @@ void Cache_Engine::read_from_mem(uint32_t address) {
     Cache_Line &cline_L2 = this->L2_cache[set_L2];
 
     //DEBUG delete after
-/*
-    std::cout << std::hex << " set_L1=" << set_L1 << " set_L2=" << set_L2
+
+    DEBUG_COMMAND(std::cout << std::hex << " set_L1=" << set_L1 << " set_L2=" << set_L2
               << " tag_L1=" << tag_L1 << " tag_L2=" << tag_L2 << std::dec
-              << std::endl;
-*/
+              << std::endl);
+
     // trying to find at L1
     cline_L1.read_from_cline(tag_L1, &out_tag_1, &status_1_read);
     this->info.l1_num_acc++;
