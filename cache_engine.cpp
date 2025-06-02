@@ -482,7 +482,7 @@ void Cache_Engine::write_to_mem(uint32_t address) {
         // writing to L2
         cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
 
-        if(status_2_write == REPLACE){
+        if((status_2_write&2) == REPLACE){
 
              uint32_t new_address = out_tag_2 << (32 - this->l2_tag_size_bits);
                     new_address |=
@@ -496,6 +496,18 @@ void Cache_Engine::write_to_mem(uint32_t address) {
 
     } else if (status_1_write != HIT) {
         cline_L2.write_to_cline(tag_L2, &out_tag_2, &status_2_write);
+
+        if((status_2_write&2) == REPLACE){
+
+             uint32_t new_address = out_tag_2 << (32 - this->l2_tag_size_bits);
+                    new_address |=
+            set_L2 << (32 - this->l2_tag_size_bits - this->l2_set_size_bits);
+            uint32_t new_Tag = getTag(new_address, false);
+            
+            cline_L1.invalidate_cline(new_Tag);
+
+        } 
+
         if (status_2_write != HIT) {
             this->info.l2_num_miss++;
             this->info.mem_num_acc++;
@@ -547,10 +559,20 @@ void Cache_Engine::read_from_mem(uint32_t address) {
         cline_L2.write_to_cline(new_Tag, &out_tag_2, &status_2_write);
         // we dont increament l2_num_acc because of the instruction of matala
     }
-
+    
     if (status_2_read == HIT)
         return; // found the tag at L2, exit
+    
+    if((status_2_read&2) == REPLACE){
 
+      uint32_t new_address = out_tag_2 << (32 - this->l2_tag_size_bits);
+                new_address |=
+      set_L2 << (32 - this->l2_tag_size_bits - this->l2_set_size_bits);
+      uint32_t new_Tag = getTag(new_address, false);
+            
+      cline_L1.invalidate_cline(new_Tag);
+
+    }
     // else: missed also at L2
     this->info.l2_num_miss++;
     this->info.mem_num_acc++;
