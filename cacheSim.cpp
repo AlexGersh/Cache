@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     }
     Cache_Engine myCache = Cache_Engine(MemCyc, BSize, L1Size, L2Size,
                            L1Cyc, L2Cyc, L1Assoc,L2Assoc,WrAlloc);
-    //myCache.print_DEBUG();
+    DEBUG_COMMAND(myCache.print_DEBUG());
     while (getline(file, line)) {
         stringstream ss(line);
         string address;
@@ -79,19 +79,19 @@ int main(int argc, char **argv) {
         }
 
         // DEBUG - remove this line
-     //   cout << "operation: " << operation;
+        DEBUG_COMMAND(cout << "operation: " << operation);
 
         string cutAddress =
             address.substr(2); // Removing the "0x" part of the address
 
         // DEBUG - remove this line
-       // cout << ", address (hex)" << cutAddress;
+       DEBUG_COMMAND(cout << ", address (hex)" << cutAddress;)
 
         unsigned long int num = 0;
         num = strtoul(cutAddress.c_str(), NULL, 16);
 
         // DEBUG - remove this line
-        //cout << " (dec) " << num << endl;
+        DEBUG_COMMAND(cout << " (dec) " << num << endl);
 
         if(operation=='r')
         {
@@ -101,8 +101,8 @@ int main(int argc, char **argv) {
         {
           myCache.write_to_mem(num);
         }
-  //      myCache.print_DEBUG();
-//        myCache.printSimInfo();
+        DEBUG_COMMAND(myCache.print_DEBUG());
+        DEBUG_COMMAND(myCache.printSimInfo());
     }
 
     double L1MissRate;

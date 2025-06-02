@@ -6,6 +6,14 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+
+//#define DEBUG 
+#ifdef DEBUG 
+  #define DEBUG_COMMAND(x) x;
+#else 
+  #define DEBUG_COMMAND(x)  ;
+#endif
+
 struct Sim_Info {
 
     // L1_cache
