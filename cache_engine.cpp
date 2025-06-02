@@ -576,11 +576,11 @@ double round_3(double x) { return std::round(x * 100000.0) / 100000.0; }
 void Cache_Engine::printSimInfo() {
     std::cout << "===SIM_INFO===" << std::endl;
 
-    std::cout << "\t l1_num_acc=" << this->info.l1_num_acc << std::endl;
-    std::cout << "\t l2_num_acc=" << this->info.l2_num_acc << std::endl;
-    std::cout << "\t l1_num_miss=" << this->info.l1_num_miss << std::endl;
-    std::cout << "\t l2_num_miss=" << this->info.l2_num_miss << std::endl;
-    std::cout << "\t mem_num_acc=" << this->info.mem_num_acc << std::endl;
+    std::cout << "l1_num_miss=" << this->info.l1_num_miss << std::endl;
+    std::cout << "l1_num_acc=" << this->info.l1_num_acc << std::endl;
+    std::cout << "\nl2_num_miss=" << this->info.l2_num_miss << std::endl;
+    std::cout << "l2_num_acc=" << this->info.l2_num_acc << std::endl;
+    std::cout << "mem_num_acc=" << this->info.mem_num_acc << std::endl;
 }
 
 //

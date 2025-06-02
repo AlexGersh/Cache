@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
         }
 
         // DEBUG - remove this line
-        DEBUG_COMMAND(cout << "operation: " << operation);
+        DEBUG_COMMAND(cout << "\n\n\noperation: " << operation);
 
         string cutAddress =
             address.substr(2); // Removing the "0x" part of the address
