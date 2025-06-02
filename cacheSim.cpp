@@ -13,9 +13,6 @@ using std::ifstream;
 using std::string;
 using std::stringstream;
 
-/*************************** GLOBALS *****************************/
-//extern Cache_Engine myCache;
-
 /*************************** MAIN *****************************/
 
 int main(int argc, char **argv) {
@@ -65,8 +62,8 @@ int main(int argc, char **argv) {
             return 0;
         }
     }
-    Cache_Engine myCache = Cache_Engine(MemCyc, BSize, L1Size, L2Size,
-                           L1Cyc, L2Cyc, L1Assoc,L2Assoc,WrAlloc);
+    Cache_Engine myCache = Cache_Engine(MemCyc, BSize, L1Size, L2Size, L1Cyc,
+                                        L2Cyc, L1Assoc, L2Assoc, WrAlloc);
     DEBUG_COMMAND(myCache.print_DEBUG());
     while (getline(file, line)) {
         stringstream ss(line);
@@ -85,7 +82,7 @@ int main(int argc, char **argv) {
             address.substr(2); // Removing the "0x" part of the address
 
         // DEBUG - remove this line
-       DEBUG_COMMAND(cout << ", address (hex)" << cutAddress;)
+        DEBUG_COMMAND(cout << ", address (hex)" << cutAddress;)
 
         unsigned long int num = 0;
         num = strtoul(cutAddress.c_str(), NULL, 16);
@@ -93,13 +90,10 @@ int main(int argc, char **argv) {
         // DEBUG - remove this line
         DEBUG_COMMAND(cout << " (dec) " << num << endl);
 
-        if(operation=='r')
-        {
-          myCache.read_from_mem(num);
-        }
-        else
-        {
-          myCache.write_to_mem(num);
+        if (operation == 'r') {
+            myCache.read_from_mem(num);
+        } else {
+            myCache.write_to_mem(num);
         }
         DEBUG_COMMAND(myCache.print_DEBUG());
         DEBUG_COMMAND(myCache.printSimInfo());
@@ -109,7 +103,7 @@ int main(int argc, char **argv) {
     double L2MissRate;
     double avgAccTime;
 
-    myCache.getSimInfo(L1MissRate,L2MissRate,avgAccTime);
+    myCache.getSimInfo(L1MissRate, L2MissRate, avgAccTime);
 
     printf("L1miss=%.03f ", L1MissRate);
     printf("L2miss=%.03f ", L2MissRate);
