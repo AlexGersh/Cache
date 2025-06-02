@@ -489,7 +489,7 @@ void Cache_Engine::write_to_mem(uint32_t address) {
             set_L2 << (32 - this->l2_tag_size_bits - this->l2_set_size_bits);
             uint32_t new_Tag = getTag(new_address, false);
             
-            cline_L1.invalidate_cline(new_tag);
+            cline_L1.invalidate_cline(new_Tag);
 
         }
 
