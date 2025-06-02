@@ -19,7 +19,7 @@
     
 2.  Access time to cache has to include acces_time to every level
     i.e: when Miss on L1, Hit on L2:            t_acc = t_L1 + t_L2
-        when Miss on L1 and L2, Hit on DRAM:   t_acc = t_L1 + t_L2 + t_Mem
+         when Miss on L1 and L2, Hit on DRAM:   t_acc = t_L1 + t_L2 + t_Mem
 
 3.  Input:
     ./cacheSim <input file> 
@@ -34,6 +34,6 @@
         --l2-cyc <# of cycles>
 
 4.  Output:
-    L1miss=<L1 miss rate>       [0,1] range, 3 digits accuracy
-    L2miss=<L2 miss rate>       [0,1] range, 3 digits accuracy
-    AccTimeAvg=<avg.acc.time>   [seconds]  , 3 digits accuracy
+    L1miss = <L1 miss rate>       [0,1] range, 3 digits accuracy
+    L2miss = <L2 miss rate>       [0,1] range, 3 digits accuracy
+    AccTimeAvg = <avg.acc.time>   [seconds]  , 3 digits accuracy
